@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Contoh reset CSS sederhana */
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+}
+
+
+:root {
+	--background: #ffffff;
+	--foreground: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--background: #ededed;
+		--foreground: #ededed;
+	}
+}
+
+body {
+	color: var(--foreground);
+	background: var(--background);
+	font-family: Arial, Helvetica, sans-serif;
+	@apply text-gray-800;
+}
+
+@layer utilities {
+	.text-balance {
+		text-wrap: balance;
+	}
+}
