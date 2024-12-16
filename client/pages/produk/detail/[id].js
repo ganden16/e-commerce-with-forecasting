@@ -136,12 +136,11 @@ export default function DetailProduk() {
 						{/* Product details */}
 						<div className="mx-auto mt-14 max-w-2xl sm:mt-16 lg:col-span-3 lg:row-span-2 lg:row-end-2 lg:mt-0 lg:max-w-none">
 							<div className="flex flex-col-reverse">
+								<h4 className="mt-3 text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">{product.price && formatRupiah(product.price)}</h4>
 								<div className="mt-4">
-									<div className='flex justify-between'>
+									<div className='flex justify-between gap-x-2'>
 										<h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl mb-2">{product.name}</h1>
-										<h4 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">{product.price && formatRupiah(product.price)}</h4>
-									</div>
-									<div className="flex items-center">
+										<div className="flex items-center">
 										{product.isReadyStock ? (
 											<>
 												<span className="text-green-500 mr-2">✔</span>
@@ -156,6 +155,8 @@ export default function DetailProduk() {
 											</>
 										}
 									</div>
+									</div>
+									
 									<p className="mt-1 text-sm text-gray-400 italic">
 										Diperbarui pada {' '}
 										{product?.updated_at &&
@@ -203,14 +204,12 @@ export default function DetailProduk() {
 							<div className="mt-10 border-t border-gray-200 pt-10">
 								<h3 className="text-sm font-medium text-gray-900">Detail Lainnya :</h3>
 								<div className="prose prose-sm mt-4 text-gray-500">
-									{product.other_detail && (
-										<ul>
-											<li>berat {product.weight} gram</li>
-											{JSON.parse(product.other_detail).map((detail, index) => (
-												<li key={index + 'other detail'}>{detail}</li>
-											))}
-										</ul>
-									)}
+									<ul>
+										<li>berat {product.weight} gram</li>
+										{product.other_detail && JSON.parse(product.other_detail).map((detail, index) => (
+											<li key={index + 'other detail'}>{detail}</li>
+										))}
+									</ul>
 								</div>
 							</div>
 

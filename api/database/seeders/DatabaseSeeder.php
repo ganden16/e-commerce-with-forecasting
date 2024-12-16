@@ -74,22 +74,188 @@ class DatabaseSeeder extends Seeder
 				'name' => $pair[1]
 			]);
 		});
-
 		$forecastingMethods = ForecastingMethod::all();
+		$dataProducts = [
+			[
+				'name' => 'Bolen Keju',
+				'category_id' => 2,
+				'description' => fake()->text(100),
+				'price' => 25000,
+				'weight' => 500,
+				'total_sales' => 99,
+				'other_detail' => json_encode(['harga per box isi 8pcs']),
+				'image' => env('APP_URL') . '/storage/seeders/products/faycook/bolen4.jpg'
+			],
+			[
+				'name' => 'Bolen Cokelat',
+				'category_id' => 2,
+				'description' => fake()->text(100),
+				'price' => 20000,
+				'weight' => 500,
+				'total_sales' => 99,
+				'other_detail' => json_encode(['harga per box isi 8pcs']),
+				'image' => env('APP_URL') . '/storage/seeders/products/faycook/bolen1.jpg'
+			],
+			// [
+			// 	'name' => 'Bolen Mix Cokelat Keju',
+			// 	'category_id' => 2,
+			// 	'description' => fake()->text(100),
+			// 	'price' => 20000,
+			// 	'weight' => 500,
+			// 	'total_sales' => 99,
+			// 	'image' => env('APP_URL') . '/storage/seeders/products/faycook/bolen6-mix.jpg'
+			// ],
+			[
+				'name' => 'Pie Susu Original',
+				'category_id' => 1,
+				'description' => fake()->text(100),
+				'price' => 20000,
+				'weight' => 500,
+				'total_sales' => 99,
+				'other_detail' => json_encode(['harga per box isi 10pcs']),
+				'image' => env('APP_URL') . '/storage/seeders/products/faycook/pie-susu3.jpg'
+			],
+			[
+				'name' => 'Pie Susu Varian Cokelat',
+				'category_id' => 1,
+				'description' => fake()->text(100),
+				'price' => 20000,
+				'weight' => 500,
+				'total_sales' => 99,
+				'other_detail' => json_encode(['harga per box isi 10pcs']),
+				'image' => env('APP_URL') . '/storage/seeders/products/faycook/pie-susu1.jpg'
+			],
+			[
+				'name' => 'Keripik Brownies',
+				'category_id' => 3,
+				'description' => fake()->text(100),
+				'price' => 10000,
+				'weight' => 500,
+				'total_sales' => 99,
+				'other_detail' => json_encode(['harga per pcs', 'dengan topping choco chips dan kacang']),
+				'image' => env('APP_URL') . '/storage/seeders/products/faycook/brownies-crispy2.jpg'
+			],
+			[
+				'name' => 'Brownies Panggang',
+				'category_id' => 3,
+				'description' => fake()->text(100),
+				'price' => 27000,
+				'weight' => 700,
+				'total_sales' => 99,
+				'other_detail' => json_encode(['harga per box ukuran 20x10', 'beraneka topping']),
+				'image' => env('APP_URL') . '/storage/seeders/products/faycook/brownies2.jpg'
+			],
+			[
+				'name' => 'Tart Brownies',
+				'category_id' => 3,
+				'description' => fake()->text(100),
+				'price' => 100000,
+				'weight' => 1000,
+				'total_sales' => 99,
+				'other_detail' => json_encode(['harga per box ukuran 20x20']),
+				'image' => env('APP_URL') . '/storage/seeders/products/faycook/brownies1.jpg'
+			],
+			[
+				'name' => 'Donat Bomboloni',
+				'category_id' => 4,
+				'description' => fake()->text(100),
+				'price' => 10000,
+				'weight' => 500,
+				'total_sales' => 99,
+				'other_detail' => json_encode(['harga per box isi 5']),
+				'image' => env('APP_URL') . '/storage/seeders/products/faycook/bomboloni2.jpg'
+			],
+			[
+				'name' => 'Donat Susu',
+				'category_id' => 4,
+				'description' => fake()->text(100),
+				'price' => 10000,
+				'weight' => 500,
+				'total_sales' => 99,
+				'other_detail' => json_encode(['harga per box isi 4']),
+				'image' => env('APP_URL') . '/storage/seeders/products/faycook/donat-susu3.jpg'
+			],
+			[
+				'name' => 'Palm Cookies',
+				'category_id' => 1,
+				'description' => fake()->text(100),
+				'price' => 35000,
+				'weight' => 350,
+				'total_sales' => 99,
+				'other_detail' => json_encode(['harga per toples']),
+				'image' => env('APP_URL') . '/storage/seeders/products/faycook/palm-cookies1.jpg'
+			],
+			[
+				'name' => 'Semprit',
+				'category_id' => 1,
+				'description' => fake()->text(100),
+				'price' => 30000,
+				'weight' => 350,
+				'total_sales' => 99,
+				'other_detail' => json_encode(['harga per toples']),
+				'image' => env('APP_URL') . '/storage/seeders/products/faycook/semprit1.jpg'
+			],
+			[
+				'name' => 'Putri Salju',
+				'category_id' => 1,
+				'description' => fake()->text(100),
+				'price' => 35000,
+				'weight' => 400,
+				'total_sales' => 99,
+				'other_detail' => json_encode(['harga per toples']),
+				'image' => env('APP_URL') . '/storage/seeders/products/faycook/putri-salju1.jpg'
+			],
+			[
+				'name' => 'Nastar Selai Nanas',
+				'category_id' => 1,
+				'description' => fake()->text(100),
+				'price' => 45000,
+				'weight' => 450,
+				'total_sales' => 99,
+				'other_detail' => json_encode(['harga per toples']),
+				'image' => env('APP_URL') . '/storage/seeders/products/faycook/nastar3.jpg'
+			],
+			[
+				'name' => 'Lidah Kucing Keju',
+				'category_id' => 1,
+				'description' => fake()->text(100),
+				'price' => 35000,
+				'weight' => 250,
+				'total_sales' => 99,
+				'other_detail' => json_encode(['harga per toples']),
+				'image' => env('APP_URL') . '/storage/seeders/products/faycook/lidah-kucing3.jpg'
+			],
+			[
+				'name' => 'Kastangel',
+				'category_id' => 1,
+				'description' => fake()->text(100),
+				'price' => 50000,
+				'weight' => 450,
+				'total_sales' => 99,
+				'other_detail' => json_encode(['harga per toples']),
+				'image' => env('APP_URL') . '/storage/seeders/products/faycook/kastangel1.jpg'
+			],
+		];
 		//products
-		for ($i = 1; $i <= 50; $i++) {
-			if ($i <= 10) {
-				$randomIdForecasting = $forecastingMethods->random(3)->pluck('id')->toArray();
-				$newProduct = Product::factory()->create([
-					'name' => 'Produk ' . $i,
-				]);
-				$newProduct->bestForecastingMethod()->attach($randomIdForecasting);
-			} else {
-				Product::factory()->create([
-					'name' => 'Produk ' . $i,
-				]);
-			}
-		}
+		collect($dataProducts)->each(function ($product) use ($forecastingMethods) {
+			$newProduct = Product::create($product);
+			$randomIdForecasting = $forecastingMethods->random(3)->pluck('id')->toArray();
+			$newProduct->bestForecastingMethod()->attach($randomIdForecasting);
+		});
+		// Product::insert($dataProducts);
+		// for ($i = 1; $i <= 50; $i++) {
+		// 	if ($i <= 10) {
+		// 		$randomIdForecasting = $forecastingMethods->random(3)->pluck('id')->toArray();
+		// 		$newProduct = Product::factory()->create([
+		// 			'name' => 'Produk ' . $i,
+		// 		]);
+		// 		$newProduct->bestForecastingMethod()->attach($randomIdForecasting);
+		// 	} else {
+		// 		Product::factory()->create([
+		// 			'name' => 'Produk ' . $i,
+		// 		]);
+		// 	}
+		// }
 		$products = Product::all();
 
 		//users role admin
@@ -435,15 +601,39 @@ class DatabaseSeeder extends Seeder
 			}
 		}
 
-
-
 		//categories
-		for ($i = 1; $i <= 6; $i++) {
-			Category::factory()->create([
-				'name' => 'Kategori ' . $i,
-				'image' => env('APP_URL') . '/storage/seeders/categories/' . $i . '.webp',
-			]);
-		}
+		$dataCategories = [
+			[
+				'name' => 'Kue Kering',
+				'description' => fake()->text(100),
+				'image' => env('APP_URL') . '/storage/seeders/products/faycook/kue-kering1.jpg'
+			],
+			[
+				'name' => 'Bolen',
+				'description' => fake()->text(100),
+				'image' => env('APP_URL') . '/storage/seeders/products/faycook/bolen2.jpg'
+			],
+			[
+				'name' => 'Brownies',
+				'description' => fake()->text(100),
+				'image' => env('APP_URL') . '/storage/seeders/products/faycook/brownies2.jpg'
+			],
+			[
+				'name' => 'Donat',
+				'description' => fake()->text(100),
+				'image' => env('APP_URL') . '/storage/seeders/products/faycook/donat-susu2.jpg'
+			],
+		];
+		collect($dataCategories)->each(function ($category) {
+			Category::create($category);
+		});
+		// Category::insert($dataCategories);
+		// for ($i = 1; $i <= 6; $i++) {
+		// 	Category::factory()->create([
+		// 		'name' => 'Kategori ' . $i,
+		// 		'image' => env('APP_URL') . '/storage/seeders/categories/' . $i . '.webp',
+		// 	]);
+		// }
 
 		//provinces
 		$provinces = RajaOngkir::getAllProvinces();

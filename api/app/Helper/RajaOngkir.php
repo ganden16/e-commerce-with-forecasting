@@ -10,6 +10,8 @@ class RajaOngkir
 	{
 		$response = Http::withHeaders([
 			'key' => env('RAJA_ONGKIR_KEY')
+		])->withOptions([
+			'verify' => false
 		])->get(env('RAJAONGKIR_URL') . '/province');
 
 		$provinces = collect($response['rajaongkir']['results']);
@@ -20,6 +22,8 @@ class RajaOngkir
 	{
 		$response = Http::withHeaders([
 			'key' => env('RAJA_ONGKIR_KEY')
+		])->withOptions([
+			'verify' => false
 		])->get(env('RAJAONGKIR_URL') . '/city');
 
 		$cities = collect($response['rajaongkir']['results']);
@@ -33,6 +37,8 @@ class RajaOngkir
 		])->withQueryParameters([
 			'city' => $cityId,
 			'id' => $subdistrictId,
+		])->withOptions([
+			'verify' => false
 		])->get(env('RAJAONGKIR_URL') . '/subdistrict');
 
 		$subdistricts = collect($response['rajaongkir']['results']);

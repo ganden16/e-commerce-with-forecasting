@@ -68,8 +68,7 @@ export default function MetodeTerbaik() {
 
 	useEffect(() => {
 		getAllProducts('', (res) => {
-			const productsWithForecastingMethod = res.data.filter((item, index) => item.best_forecasting_method.length > 0)
-			setProducts(productsWithForecastingMethod)
+			setProducts(res.data)
 		})
 		getAllMethodsForecast((res) => setMethods(res.data))
 	}, [])

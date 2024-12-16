@@ -1,76 +1,9 @@
 import HeaderUser from '@/components/user/header'
 import FooterUser from '@/components/user/footer'
 import {useEffect, useState} from 'react'
-import {getAllCategories, getLandingPageData} from '@/lib/fetchApi'
+import {getLandingPageData} from '@/lib/fetchApi'
 import Link from 'next/link'
-import axios, {endpoint} from '@/lib/axios'
 
-const categories = [
-	{
-		name: 'New Arrivals',
-		href: '#',
-		imageSrc: 'https://tailwindui.com/img/ecommerce-images/home-page-01-category-01.jpg',
-	},
-	{
-		name: 'Productivity',
-		href: '#',
-		imageSrc: 'https://tailwindui.com/img/ecommerce-images/home-page-01-category-02.jpg',
-	},
-	{
-		name: 'Workspace',
-		href: '#',
-		imageSrc: 'https://tailwindui.com/img/ecommerce-images/home-page-01-category-04.jpg',
-	},
-	{
-		name: 'Accessories',
-		href: '#',
-		imageSrc: 'https://tailwindui.com/img/ecommerce-images/home-page-01-category-05.jpg',
-	},
-	{name: 'Sale', href: '#', imageSrc: 'https://tailwindui.com/img/ecommerce-images/home-page-01-category-03.jpg'},
-]
-const collections = [
-	{
-		name: 'Handcrafted Collection',
-		href: '#',
-		imageSrc: 'https://tailwindui.com/img/ecommerce-images/home-page-01-collection-01.jpg',
-		imageAlt: 'Brown leather key ring with brass metal loops and rivets on wood table.',
-		description: 'Keep your phone, keys, and wallet together, so you can lose everything at once.',
-	},
-	{
-		name: 'Organized Desk Collection',
-		href: '#',
-		imageSrc: 'https://tailwindui.com/img/ecommerce-images/home-page-01-collection-02.jpg',
-		imageAlt: 'Natural leather mouse pad on white desk next to porcelain mug and keyboard.',
-		description: 'The rest of the house will still be a mess, but your desk will look great.',
-	},
-	{
-		name: 'Focus Collection',
-		href: '#',
-		imageSrc: 'https://tailwindui.com/img/ecommerce-images/home-page-01-collection-03.jpg',
-		imageAlt: 'Person placing task list card into walnut card holder next to felt carrying case on leather desk pad.',
-		description: 'Be more productive than enterprise project managers with a single piece of paper.',
-	},
-]
-const testimonials = [
-	{
-		id: 1,
-		quote:
-			'My order arrived super quickly. The product is even better than I hoped it would be. Very happy customer over here!',
-		attribution: 'Sarah Peters, New Orleans',
-	},
-	{
-		id: 2,
-		quote:
-			'I had to return a purchase that didn’t fit. The whole process was so simple that I ended up ordering two new items!',
-		attribution: 'Kelly McPherson, Chicago',
-	},
-	{
-		id: 3,
-		quote:
-			'Now that I’m on holiday for the summer, I’ll probably order a few more shirts. It’s just so convenient, and I know the quality will always be there.',
-		attribution: 'Chris Paul, Phoenix',
-	},
-]
 export default function Index() {
 	const [categories, setCategories] = useState(null)
 	const [bestReview, setBestReview] = useState(null)
@@ -88,7 +21,7 @@ export default function Index() {
 			<HeaderUser />
 			<main>
 				<div className="bg-gray-600 relative mx-auto flex w-full flex-col items-center px-6 py-24 text-center sm:py-64 lg:px-10">
-					<h1 className="text-4xl font-bold tracking-tight text-white lg:text-6xl">Produk Makanan Instan Hadir Disini</h1>
+					<h1 className="text-4xl font-bold tracking-tight text-white lg:text-6xl">Fay Brownies Hadir Disini</h1>
 					<p className="mt-4 text-xl text-white p-5">
 						Tersedia berbagai pilihan produk yang siap dikirim, dijamin kualitas terbaik dengan harga terjangkau
 					</p>
@@ -160,10 +93,10 @@ export default function Index() {
 						<div className="relative bg-gray-900 bg-opacity-75 px-6 py-32 sm:px-12 sm:py-40 lg:px-16">
 							<div className="relative mx-auto flex max-w-3xl flex-col items-center text-center">
 								<h2 id="social-impact-heading" className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
-									<span className="block sm:inline">Tingkatkan Persediaan Makanan Anda</span>
+									<span className="block sm:inline">Tingkatkan Persediaan Camilan Anda</span>
 								</h2>
 								<p className="mt-4 text-xl text-white">
-									Nikmati kepraktisan makanan instan yang siap santap kapan saja. Kami menyediakan berbagai pilihan makanan instan berkualitas, mulai dari daging, sayuran, hingga makanan siap saji. Semua produk kami tidak mudah basi dengan metode terbaik untuk menjaga kesegaran dan kualitasnya. Pesan sekarang, dan kami siap mengirimkan langsung ke pintu Anda dengan layanan pengiriman cepat dan aman.
+									Nikmati kepraktisan makanan instan yang siap santap kapan saja. Kami menyediakan berbagai pilihan makanan instan berkualitas, mulai dari brownies, kue kering, bolen, dan kue kering. Semua produk kami tidak mudah basi dengan metode terbaik untuk menjaga kesegaran dan kualitasnya. Pesan sekarang, dan kami siap mengirimkan langsung ke pintu Anda dengan layanan pengiriman cepat dan aman.
 								</p>
 								<Link
 									href="/produk"

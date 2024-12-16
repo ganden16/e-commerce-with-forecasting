@@ -19,7 +19,9 @@ class ShipmentController extends Controller
 			'numeric' => ':attribute harus angka'
 		]);
 
-		$response = Http::post(env('RAJAONGKIR_URL') . '/cost', [
+		$response = Http::withOptions([
+			'verify' => false
+		])->post(env('RAJAONGKIR_URL') . '/cost', [
 			'key' => env('RAJA_ONGKIR_KEY'),
 			'origin' => 5634,
 			'originType' => 'subdistrict',
@@ -46,7 +48,9 @@ class ShipmentController extends Controller
 		]);
 
 		try {
-			$response = Http::post(env('RAJAONGKIR_URL') . '/waybill', [
+			$response = Http::withOptions([
+				'verify' => false
+			])->post(env('RAJAONGKIR_URL') . '/waybill', [
 				'key' => env('RAJA_ONGKIR_KEY'),
 				'waybill' => $request->resi,
 				'courier' => $request->courier

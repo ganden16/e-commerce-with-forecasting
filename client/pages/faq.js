@@ -8,12 +8,12 @@ const faqs = [
 	{
 		question: `Apa saja yang dijual di ${brandApp}?`,
 		answer:
-			"Kami menjual beberapa produk makanan setengah matang hingga produk jadi yang siap dikonsumsi seperti jajanan, camilan, dan produk olahan lainnya",
+			"Kami menjual beberapa produk makanan brownies dan kue kering yang siap dikonsumsi",
 	},
 	{
 		question: `Bagaimana cara memesannya?`,
 		answer:
-			"Anda dapat memesan produk melalui website ini dengan cara memilih produk -> checkout -> memilih kurir -> melakukan pembayaran",
+			"Anda dapat memesan produk melalui website ini dengan cara login -> memilih produk -> memasukkan ke keranjang -> checkout -> memilih kurir -> melakukan pembayaran",
 	},
 	{
 		question: `Apakah semua data saya aman?`,

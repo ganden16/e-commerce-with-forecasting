@@ -270,6 +270,7 @@ def best_method_forecast(request):
             data = json.loads(request.body)
             sales_data = data.get('sales_data', [])
             method_ids = data.get('forecasting_method_id', [])
+            steps = data.get('steps', 1)
 
             if not sales_data or not method_ids:
                 return JsonResponse({'error': 'sales_data dan forecasting_method_id diperlukan.'}, status=400)
@@ -277,7 +278,7 @@ def best_method_forecast(request):
             results = []
             for method_id in method_ids:
                 try:
-                    forecast = run_forecasting(method_id, sales_data)
+                    forecast = run_forecasting(method_id, sales_data, steps)
                     results.append({'method_id': method_id, 'forecast': forecast})
                 except Exception as e:
                     results.append({'method_id': method_id, 'error': str(e)})
@@ -289,21 +290,21 @@ def best_method_forecast(request):
 
     return JsonResponse({'message': 'Gunakan metode POST untuk mengirim data.'}, status=400)
 
-def run_forecasting(method_id, sales_data):
+def run_forecasting(method_id, sales_data, steps):
     if method_id in FORECASTING_METHODS:
         method_name = FORECASTING_METHODS[method_id]
         method_function = globals().get(method_name)
         if method_function:
-            return method_function(sales_data)
+            return method_function(sales_data, steps)
     raise ValueError(f"Metode dengan ID {method_id} tidak ditemukan.")
 
 # arima
 @csrf_exempt  
-def arima_forecast(sales_data):
+def arima_forecast(sales_data, steps):
 	df = pd.DataFrame(sales_data, columns=['sales'])
 	model = ARIMA(df['sales'], order=(1, 1, 1))
 	model_fit = model.fit()
-	forecast = model_fit.forecast(steps=1)
+	forecast = model_fit.forecast(steps = steps)
 	return forecast.tolist()[0]
 
 # simple exponential smoothing
