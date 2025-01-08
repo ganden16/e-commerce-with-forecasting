@@ -165,10 +165,16 @@ class ForecastingController extends Controller
 
 		try {
 			$response = Http::timeout(50)->post(env('DJANGO_URL') . "/api/forecast/all", [
-				'sales_data' => $sales_data
+				'sales_data' => $sales_data,
+				'steps' => $request->steps ?? 1
 			]);
 			$data = $response->json();
-			return response()->json($data);
+			if($response->status() == 200) return response()->json($data);
+			if($response->status() == 500) return response()->json([
+				'error' => 'error bos',
+				'data' => $data
+			]);
+			
 		} catch (\Throwable $th) {
 			return response()->json([
 				'error' => 'Something went wrong while processing your request.',
@@ -262,7 +268,8 @@ class ForecastingController extends Controller
 
 			$response = Http::post(env('DJANGO_URL') . "/api/forecast/best-method", [
 				'sales_data' => $sales_data,
-				'forecasting_method_id' => $request->forecasting_method_id
+				'forecasting_method_id' => $request->forecasting_method_id,
+				'steps' => $request->steps ?? 1,
 			]);
 			$data = $response->json();
 			return response()->json($data);

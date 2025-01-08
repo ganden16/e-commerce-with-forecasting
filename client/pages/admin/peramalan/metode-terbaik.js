@@ -90,7 +90,8 @@ export default function MetodeTerbaik() {
 	function classNames(...classes) {
 		return classes.filter(Boolean).join(' ')
 	}
-
+console.log(forecastDataInfo)
+console.log(resultForecast)
 	return (
 		<>
 			<Sidebar pagesBreadcrumbs={pagesForBreadcrumbs} headingPage="Peramalan Metode Terbaik">

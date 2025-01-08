@@ -33,690 +33,508 @@ from sklearn.model_selection import train_test_split
 # all
 @csrf_exempt  
 def all_forecast(request):
-	if request.method == 'POST':
-		try:
-			data = json.loads(request.body)
-			sales_data = data.get('sales_data', [])
-			weights = data.get('weights', [])
-			window_size = data.get('window_size', 2)
-			n_neighbors = data.get('n_neighbors', 3)
-
-			# arima
-			dfArima = preprocess_data(sales_data)
-			modelArima = ARIMA(dfArima['sales'], order=(1, 1, 1))
-			model_fitArima = modelArima.fit()
-			forecastArima = model_fitArima.forecast(steps=1)
-
-			# simple exponential smoothing
-			dfSes = preprocess_data(sales_data)
-			modelSes = SimpleExpSmoothing(dfSes['sales'])
-			model_fitSes = modelSes.fit()
-			forecastSes = model_fitSes.forecast(steps=1)
-
-			# holt linear Trend Model (double exponential smoothing)
-			dfHLTM = preprocess_data(sales_data)
-			modelHLTM = ExponentialSmoothing(dfHLTM['sales'], trend='add')
-			model_fitHLTM = modelHLTM.fit()
-			forecastHLTM = model_fitHLTM.forecast(steps=1)
-
-			# # Holt-Winters Seasonal Model (Triple Exponential Smoothing)
-			# dfHWSM = pd.DataFrame(sales_data, columns=['sales'])
-			# modelHWSM = ExponentialSmoothing(dfHWSM['sales'], trend='add', seasonal='add', seasonal_periods=4)
-			# model_fitHWSM = modelHWSM.fit()
-			# forecastHWSM = model_fitHWSM.forecast(steps=1)
-
-			# linear regression
-			dfLr = preprocess_data(sales_data)
-			dfLr['time'] = np.arange(len(dfLr))
-			XLr = dfLr[['time']]
-			yLr = dfLr['sales']
-			modelLr = LinearRegression()
-			modelLr.fit(XLr, yLr)
-			next_timeLr = len(dfLr)
-			forecastLr = modelLr.predict([[next_timeLr]])
-
-			# random forest
-			dfRf = preprocess_data(sales_data)
-			dfRf['time'] = np.arange(len(dfRf))
-			Xrf = dfRf[['time']]
-			yrf = dfRf['sales']
-			modelRf = RandomForestRegressor(n_estimators=100)
-			modelRf.fit(Xrf, yrf)
-			next_timeRf = len(dfRf)
-			forecastRf = modelRf.predict([[next_timeRf]])
-
-			# svr
-			dfSvr = preprocess_data(sales_data)
-			dfSvr['time'] = np.arange(len(dfSvr))
-			XSvr = dfSvr[['time']]
-			ySvr = dfSvr['sales']
-			modelSvr = SVR(kernel='rbf')
-			modelSvr.fit(XSvr, ySvr)
-			next_timeSvr = len(dfSvr)
-			forecastSvr = modelSvr.predict([[next_timeSvr]])
-
-			# xgboost
-			dfXgb = preprocess_data(sales_data)
-			dfXgb['time'] = np.arange(len(dfXgb))
-			XXgb = dfXgb[['time']]
-			yXgb = dfXgb['sales']
-			modelXgb = xgb.XGBRegressor(n_estimators=100)
-			modelXgb.fit(XXgb, yXgb)
-			next_timeXgb = len(dfXgb)
-			forecastXgb = modelXgb.predict(np.array([[next_timeXgb]]))
-			forecast_valueXgb = float(forecastXgb[0])
-
-			# simple moving average
-			dfSma = preprocess_data(sales_data)
-			forecastSma = dfSma['sales'].mean()
-
-			# double moving average
-			dfDma = preprocess_data(sales_data)
-			dfDma['SMA1'] = dfDma['sales'].rolling(window=window_size).mean()
-			dfDma['SMA2'] = dfDma['SMA1'].rolling(window=window_size).mean()
-			if pd.isna(dfDma['SMA2'].iloc[-1]):
-					return JsonResponse({'error': 'Data tidak cukup untuk menghitung double moving average.'}, status=400)
-			forecastDma = 2 * dfDma['SMA1'].iloc[-1] - dfDma['SMA2'].iloc[-1]
-
-			# weighted moving average
-			if not sales_data or len(sales_data) != len(weights):
-				return JsonResponse({'error': 'Panjang data penjualan dan bobot harus sama.'}, status=400)
-			dfWma = preprocess_data(sales_data)
-			weights_arrayWma = np.array(weights)
-			sales_arrayWma = np.array(sales_data)
-			wma = np.sum(weights_arrayWma * sales_arrayWma) / np.sum(weights_arrayWma)
-
-			# Gaussian Process Regression
-			XGpr = np.arange(len(sales_data)).reshape(-1, 1)
-			yGpr = np.array(sales_data)
-			kernelGpr = C(1.0, (1e-3, 1e3)) * RBF(1.0, (1e-2, 1e2))
-			modelGpr = GaussianProcessRegressor(kernel=kernelGpr, n_restarts_optimizer=10)
-			modelGpr.fit(XGpr, yGpr)
-			next_periodGpr = np.array([[len(sales_data)]])
-			forecastGpr = modelGpr.predict(next_periodGpr, return_std=True)
-
-			# Long Short-Term Memory
-			sales_dataLstm = np.array(sales_data).reshape(-1, 1)
-			scalerLstm = MinMaxScaler(feature_range=(0, 1))
-			scaled_dataLstm = scalerLstm.fit_transform(sales_dataLstm)
-			modelLstm = Sequential()
-			modelLstm.add(LSTM(50, return_sequences=True, input_shape=(scaled_dataLstm.shape[1], 1)))
-			modelLstm.add(LSTM(50, return_sequences=False))
-			modelLstm.add(Dense(1))
-			modelLstm.compile(optimizer='adam', loss='mean_squared_error')
-			X_trainLstm = scaled_dataLstm[:-1].reshape((1, -1, 1))
-			y_trainLstm = scaled_dataLstm[1:].reshape((1, -1, 1))
-			modelLstm.fit(X_trainLstm, y_trainLstm, epochs=10, batch_size=1, verbose=2)
-			last_sequenceLstm = scaled_dataLstm[-1:].reshape((1, -1, 1))
-			forecastLstm = modelLstm.predict(last_sequenceLstm)
-			forecastLstm = scalerLstm.inverse_transform(forecastLstm.reshape(-1, 1))
-
-			# # Bayesian Regression
-			# XBr = np.arange(len(sales_data)).reshape(-1, 1)
-			# YBr = np.array(sales_data)
-			# modelBr = BayesianRidge()
-			# modelBr.fit(XBr, YBr)
-			# next_periodBr = np.array([[len(sales_data)]])
-			# forecastBr = modelBr.predict(next_periodBr)[0]
-
-
-			# Polynomial Regression
-			XPr = np.arange(len(sales_data)).reshape(-1, 1)
-			yPr = np.array(sales_data)
-			polyPr = PolynomialFeatures(degree=2)
-			X_polyPr = polyPr.fit_transform(XPr)
-			modelPr = LinearRegression()
-			modelPr.fit(X_polyPr, yPr)
-			next_periodPr = np.array([[len(sales_data)]])
-			next_period_polyPr = polyPr.transform(next_periodPr)
-			forecastPr = modelPr.predict(next_period_polyPr)
-
-			# K-Nearest Neighbors Regression (KNN Regression)
-			if n_neighbors < 1:
-				return JsonResponse({'error': 'n_neighbors harus lebih besar atau sama dengan 1.'}, status=400)
-			XKnn = np.arange(len(sales_data)).reshape(-1, 1)
-			yKnn = np.array(sales_data)
-			modelKnn = KNeighborsRegressor(n_neighbors=n_neighbors)
-			modelKnn.fit(XKnn, yKnn)
-			next_periodKnn = np.array([[len(sales_data)]])
-			forecastKnn = modelKnn.predict(next_periodKnn)
-
-			# Decision Tree Regression
-			XDtr= np.arange(len(sales_data)).reshape(-1, 1)
-			yDtr = np.array(sales_data)
-			modelDtr = DecisionTreeRegressor()
-			modelDtr.fit(XDtr, yDtr)
-			next_periodDtr = np.array([[len(sales_data)]])
-			forecastDtr = modelDtr.predict(next_periodDtr)
-
-			# Gradient Boosting Regression
-			XGbr = np.arange(len(sales_data)).reshape(-1, 1)
-			yGbr = np.array(sales_data)
-			modelGbr = GradientBoostingRegressor(n_estimators=100, learning_rate=0.1, max_depth=1, random_state=0, loss='squared_error')
-			modelGbr.fit(XGbr, yGbr)
-			next_periodGbr = np.array([[len(sales_data)]])
-			forecastGbr = modelGbr.predict(next_periodGbr)
-
-			# ElasticNet Regression
-			XEr = np.arange(len(sales_data)).reshape(-1, 1)
-			yEr = np.array(sales_data)
-			modelEr = ElasticNet(alpha=1.0, l1_ratio=0.5)
-			modelEr.fit(XEr, yEr)
-			next_periodEr = np.array([[len(sales_data)]])
-			forecastEr = modelEr.predict(next_periodEr)
-
-			# Lasso Regression
-			XLas = np.arange(len(sales_data)).reshape(-1, 1)
-			yLas = np.array(sales_data)
-			modelLas = Lasso(alpha=1.0)
-			modelLas.fit(XLas, yLas)
-			next_periodLas = np.array([[len(sales_data)]])
-			forecastLas = modelLas.predict(next_periodLas)
-
-			return JsonResponse({
-				'result' : [
-					{'model': 'arima', 'forecast': forecastArima.tolist()[0]},
-					{'model': 'simple-exponential-smoothing', 'forecast': forecastSes.tolist()[0]},
-					{'model': 'holt-linear', 'forecast': forecastHLTM.tolist()[0]},
-					#  {'model': 'hw', 'forecast': forecastHWSM.tolist()[0]},
-					#  {'model': 'bayesian', 'forecast': forecastBr.tolist()[0]},
-					{'model': 'linear-regression', 'forecast': forecastLr.tolist()[0]},
-					{'model': 'random-forest', 'forecast': forecastRf.tolist()[0]},
-					{'model': 'support-vector-regressor', 'forecast': forecastSvr.tolist()[0]},
-					{'model': 'xgboost', 'forecast': forecast_valueXgb},
-					{'model': 'simple-moving-average', 'forecast': float(forecastSma)},
-					{'model': 'double-moving-average', 'forecast': float(forecastDma)},
-					{'model': 'weighted-moving-average', 'forecast': float(wma)},
-					{'model': 'gaussian', 'forecast': float(forecastGpr[0])},
-					{'model': 'long-short-term-memory', 'forecast': float(forecastLstm[0])},
-					{'model': 'polynomial', 'forecast': float(forecastPr[0])},
-					{'model': 'k-nearest-neighbors-regression', 'forecast': float(forecastKnn[0])},
-					{'model': 'decision-tree', 'forecast': float(forecastDtr[0])},
-					{'model': 'gradient-boosting', 'forecast': float(forecastGbr[0])},
-					{'model': 'elasticnet', 'forecast': float(forecastEr[0])},
-					{'model': 'lasso-regression', 'forecast': float(forecastLas[0])},
-				]
-			}, safe=False, status=200)		
-
-
-		except Exception as e:
-			return JsonResponse({'error': str(e)}, status=500)
-
-	return JsonResponse({'message': 'Use POST method to send sales data.'}, status=400)
-
-# arima
-@csrf_exempt  
-def arima_forecast(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            sales_data = data.get('sales_data', [])
-            if not sales_data or len(sales_data) < 4:
-                return JsonResponse({'error': 'Data penjualan tidak mencukupi untuk forecasting.'}, status=400)
-            df = pd.DataFrame(sales_data, columns=['sales'])
-            model = ARIMA(df['sales'], order=(1, 1, 1))
-            model_fit = model.fit()
-            forecast = model_fit.forecast(steps=1)
-            return JsonResponse({'forecast': forecast.tolist()[0]}, status=200)
-
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-
-    return JsonResponse({'message': 'Use POST method to send sales data.'}, status=400)
-
-# simple exponential smoothing
-@csrf_exempt
-def exponential_smoothing_forecast(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            sales_data = data.get('sales_data', [])
-            if not sales_data or len(sales_data) < 4:
-                return JsonResponse({'error': 'Data penjualan tidak mencukupi untuk forecasting.'}, status=400)
-            df = pd.DataFrame(sales_data, columns=['sales'])
-            model = SimpleExpSmoothing(df['sales'])
-            model_fit = model.fit()
-            forecast = model_fit.forecast(steps=1)
-            return JsonResponse({'forecast': forecast.tolist()[0]}, status=200)
-
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-
-    return JsonResponse({'message': 'Use POST method to send sales data.'}, status=400)
-
-# holt linear Trend Model (double exponential smoothing)
-@csrf_exempt
-def holt_linear_forecast(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            sales_data = data.get('sales_data', [])
-            if not sales_data or len(sales_data) < 4:
-                return JsonResponse({'error': 'Data penjualan tidak mencukupi untuk forecasting.'}, status=400)
-            df = pd.DataFrame(sales_data, columns=['sales'])
-            model = ExponentialSmoothing(df['sales'], trend='add')
-            model_fit = model.fit()
-            forecast = model_fit.forecast(steps=1)
-            return JsonResponse({'forecast': forecast.tolist()[0]}, status=200)
-
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-
-    return JsonResponse({'message': 'Use POST method to send sales data.'}, status=400)
-
-# Holt-Winters Seasonal Model (Triple Exponential Smoothing)
-@csrf_exempt
-def holt_winters_forecast(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            sales_data = data.get('sales_data', [])
-            if not sales_data or len(sales_data) < 4:
-                return JsonResponse({'error': 'Data penjualan tidak mencukupi untuk forecasting musiman.'}, status=400)
-            df = pd.DataFrame(sales_data, columns=['sales'])
-            model = ExponentialSmoothing(df['sales'], trend='add', seasonal='add', seasonal_periods=4)
-            model_fit = model.fit()
-            forecast = model_fit.forecast(steps=1)
-            return JsonResponse({'forecast': forecast.tolist()[0]}, status=200)
-
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-
-    return JsonResponse({'message': 'Use POST method to send sales data.'}, status=400)
-
-# linear regression
-@csrf_exempt
-def linear_regression_forecast(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            sales_data = data.get('sales_data', [])
-            if not sales_data or len(sales_data) < 4:
-                return JsonResponse({'error': 'Data penjualan tidak mencukupi untuk forecasting.'}, status=400)
-            df = pd.DataFrame(sales_data, columns=['sales'])
-            df['time'] = np.arange(len(df))
-            X = df[['time']]
-            y = df['sales']
-            model = LinearRegression()
-            model.fit(X, y)
-            next_time = len(df)
-            forecast = model.predict([[next_time]])
-            return JsonResponse({'forecast': forecast[0]}, status=200)
-
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-
-    return JsonResponse({'message': 'Use POST method to send sales data.'}, status=400)
-
-# random forest
-@csrf_exempt
-def random_forest_forecast(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            sales_data = data.get('sales_data', [])
-            if not sales_data or len(sales_data) < 4:
-                return JsonResponse({'error': 'Data penjualan tidak mencukupi untuk forecasting.'}, status=400)
-            df = pd.DataFrame(sales_data, columns=['sales'])
-            df['time'] = np.arange(len(df))
-            X = df[['time']]
-            y = df['sales']
-            model = RandomForestRegressor(n_estimators=100)
-            model.fit(X, y)
-            next_time = len(df)
-            forecast = model.predict([[next_time]])
-            return JsonResponse({'forecast': forecast[0]}, status=200)
-
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-
-    return JsonResponse({'message': 'Use POST method to send sales data.'}, status=400)
-
-#  svr
-@csrf_exempt
-def svr_forecast(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            sales_data = data.get('sales_data', [])
-            if not sales_data or len(sales_data) < 4:
-                return JsonResponse({'error': 'Data penjualan tidak mencukupi untuk forecasting.'}, status=400)
-            df = pd.DataFrame(sales_data, columns=['sales'])
-            df['time'] = np.arange(len(df))
-            X = df[['time']]
-            y = df['sales']
-            model = SVR(kernel='rbf')
-            model.fit(X, y)
-            next_time = len(df)
-            forecast = model.predict([[next_time]])
-            return JsonResponse({'forecast': forecast[0]}, status=200)
-
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-
-    return JsonResponse({'message': 'Use POST method to send sales data.'}, status=400)
-
-# xgboost
-@csrf_exempt
-def xgboost_forecast(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            sales_data = data.get('sales_data', [])
-            if not sales_data or len(sales_data) < 4:
-                return JsonResponse({'error': 'Data penjualan tidak mencukupi untuk forecasting.'}, status=400)
-            df = pd.DataFrame(sales_data, columns=['sales'])
-            df['time'] = np.arange(len(df))
-            X = df[['time']]
-            y = df['sales']
-            model = xgb.XGBRegressor(n_estimators=100)
-            model.fit(X, y)
-            next_time = len(df)
-            forecast = model.predict(np.array([[next_time]]))
-            forecast_value = float(forecast[0])
-            return JsonResponse({'forecast': forecast_value}, status=200)
-
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-
-    return JsonResponse({'message': 'Use POST method to send sales data.'}, status=400)
-
-# simple moving average
-@csrf_exempt
-def simple_moving_average_forecast(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            sales_data = data.get('sales_data', [])
-            if not sales_data:
-                return JsonResponse({'error': 'Data penjualan tidak mencukupi untuk forecasting.'}, status=400)
-            df = pd.DataFrame(sales_data, columns=['sales'])
-            forecast = df['sales'].rolling(window=3).mean().iloc[-1]  
-            return JsonResponse({'forecast': float(forecast)}, status=200)
-
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-
-    return JsonResponse({'message': 'Use POST method to send sales data.'}, status=400)
-
-# double moving average
-@csrf_exempt
-def double_moving_average_forecast(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            sales_data = data.get('sales_data', [])
-            window_size = data.get('window_size', 2)
-            if not sales_data or len(sales_data) < 4:
-                return JsonResponse({'error': 'Data penjualan tidak mencukupi untuk forecasting.'}, status=400)
-            df = pd.DataFrame(sales_data, columns=['sales'])
-            df['SMA1'] = df['sales'].rolling(window=window_size).mean()
-            df['SMA2'] = df['SMA1'].rolling(window=window_size).mean()
-            if pd.isna(df['SMA2'].iloc[-1]):
-                return JsonResponse({'error': 'Data tidak cukup untuk menghitung double moving average.'}, status=400)
-            forecast = 2 * df['SMA1'].iloc[-1] - df['SMA2'].iloc[-1]
-            return JsonResponse({'forecast': float(forecast)}, status=200)
-
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-
-    return JsonResponse({'message': 'Use POST method to send sales data.'}, status=400)
-
-# weighted moving average
-@csrf_exempt
-def weighted_moving_average_forecast(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
             sales_data = data.get('sales_data', [])
             weights = data.get('weights', [])
-            if not sales_data or len(sales_data) != len(weights):
-                return JsonResponse({'error': 'Panjang data penjualan dan bobot harus sama.'}, status=400)
-            df = pd.DataFrame(sales_data, columns=['sales'])
-            weights_array = np.array(weights)
-            sales_array = np.array(sales_data)
-            wma = np.sum(weights_array * sales_array) / np.sum(weights_array)
-            return JsonResponse({'forecast': float(wma)}, status=200)
+            window_size = data.get('window_size', 2)
+            n_neighbors = data.get('n_neighbors', 3)
+
+            # arima
+            dfArima = preprocess_data(sales_data)
+            modelArima = ARIMA(dfArima['sales'], order=(1, 1, 1))
+            model_fitArima = modelArima.fit()
+            forecastArima = model_fitArima.forecast(steps=1)
+            forecastArima = forecastArima[0] if isinstance(forecastArima, (list, np.ndarray)) else float(forecastArima)
+
+            # simple exponential smoothing
+            dfSes = preprocess_data(sales_data)
+            modelSes = SimpleExpSmoothing(dfSes['sales'])
+            model_fitSes = modelSes.fit()
+            forecastSes = model_fitSes.forecast(steps=1)
+            forecastSes = forecastSes[0] if isinstance(forecastSes, (list, np.ndarray)) else float(forecastSes)
+
+            # Holt-Winters Seasonal Model (Triple Exponential Smoothing)
+            dfHWSM = pd.DataFrame(sales_data, columns=['sales'])
+            modelHWSM = ExponentialSmoothing(dfHWSM['sales'], trend='add', seasonal='add', seasonal_periods=4)
+            model_fitHWSM = modelHWSM.fit()
+            forecastHWSM = model_fitHWSM.forecast(steps=1)
+            forecastHWSM = forecastHWSM[0] if isinstance(forecastHWSM, (list, np.ndarray)) else float(forecastHWSM)
+
+            # linear regression
+            dfLr = preprocess_data(sales_data)
+            dfLr['time'] = np.arange(len(dfLr))
+            XLr = dfLr[['time']]
+            yLr = dfLr['sales']
+            modelLr = LinearRegression()
+            modelLr.fit(XLr, yLr)
+            next_timeLr = len(dfLr)
+            forecastLr = modelLr.predict([[next_timeLr]])
+            forecastLr = forecastLr[0] if isinstance(forecastLr, (list, np.ndarray)) else float(forecastLr)
+
+            # random forest
+            dfRf = preprocess_data(sales_data)
+            dfRf['time'] = np.arange(len(dfRf))
+            Xrf = dfRf[['time']]
+            yrf = dfRf['sales']
+            modelRf = RandomForestRegressor(n_estimators=100)
+            modelRf.fit(Xrf, yrf)
+            next_timeRf = len(dfRf)
+            forecastRf = modelRf.predict([[next_timeRf]])
+            forecastRf = forecastRf[0] if isinstance(forecastRf, (list, np.ndarray)) else float(forecastRf)
+
+            # svr
+            dfSvr = preprocess_data(sales_data)
+            dfSvr['time'] = np.arange(len(dfSvr))
+            XSvr = dfSvr[['time']]
+            ySvr = dfSvr['sales']
+            modelSvr = SVR(kernel='rbf')
+            modelSvr.fit(XSvr, ySvr)
+            next_timeSvr = len(dfSvr)
+            forecastSvr = modelSvr.predict([[next_timeSvr]])
+            forecastSvr = forecastSvr[0] if isinstance(forecastSvr, (list, np.ndarray)) else float(forecastSvr)
+
+            # single moving average
+            dfSma = preprocess_data(sales_data)
+            forecastSma = dfSma['sales'].rolling(window=3).mean().iloc[-1]
+            forecastSma = float(forecastSma)
+
+            # double moving average
+            dfDma = preprocess_data(sales_data)
+            dfDma['SMA1'] = dfDma['sales'].rolling(window=window_size).mean()
+            dfDma['SMA2'] = dfDma['SMA1'].rolling(window=window_size).mean()
+            if pd.isna(dfDma['SMA2'].iloc[-1]):
+                return JsonResponse({'error': 'Data tidak cukup untuk menghitung double moving average.'}, status=400)
+            forecastDma = 2 * dfDma['SMA1'].iloc[-1] - dfDma['SMA2'].iloc[-1]
+            forecastDma = float(forecastDma)
+
+            # weighted moving average
+            weights = np.linspace(0.5, 1, len(sales_data))
+            weights /= weights.sum()
+            weights_arrayWma = np.array(weights)
+            sales_arrayWma = np.array(sales_data)
+            wma = np.sum(weights_arrayWma * sales_arrayWma) / np.sum(weights_arrayWma)
+            wma = float(wma)
+
+            # Gaussian Process Regression
+            XGpr = np.arange(len(sales_data)).reshape(-1, 1)
+            yGpr = np.array(sales_data)
+            kernelGpr = C(1.0, (1e-3, 1e3)) * RBF(1.0, (1e-2, 1e2))
+            modelGpr = GaussianProcessRegressor(kernel=kernelGpr, n_restarts_optimizer=10)
+            modelGpr.fit(XGpr, yGpr)
+            next_periodGpr = np.array([[len(sales_data)]])
+            forecastGpr = modelGpr.predict(next_periodGpr, return_std=False)
+            forecastGpr = float(forecastGpr)
+
+            # Bayesian Regression
+            XBr = np.arange(len(sales_data)).reshape(-1, 1)
+            YBr = np.array(sales_data)
+            modelBr = BayesianRidge()
+            modelBr.fit(XBr, YBr)
+            next_periodBr = np.array([[len(sales_data)]])
+            forecastBr = modelBr.predict(next_periodBr)
+            forecastBr = forecastBr[0] if isinstance(forecastBr, (list, np.ndarray)) else float(forecastBr)
+
+            # Polynomial Regression
+            XPr = np.arange(len(sales_data)).reshape(-1, 1)
+            yPr = np.array(sales_data)
+            polyPr = PolynomialFeatures(degree=2)
+            X_polyPr = polyPr.fit_transform(XPr)
+            modelPr = LinearRegression()
+            modelPr.fit(X_polyPr, yPr)
+            next_periodPr = np.array([[len(sales_data)]])
+            next_period_polyPr = polyPr.transform(next_periodPr)
+            forecastPr = modelPr.predict(next_period_polyPr)
+            forecastPr = forecastPr[0] if isinstance(forecastPr, (list, np.ndarray)) else float(forecastPr)
+
+            # K-Nearest Neighbors Regression (KNN Regression)
+            if n_neighbors < 1:
+                return JsonResponse({'error': 'n_neighbors harus lebih besar atau sama dengan 1.'}, status=400)
+            XKnn = np.arange(len(sales_data)).reshape(-1, 1)
+            yKnn = np.array(sales_data)
+            modelKnn = KNeighborsRegressor(n_neighbors=n_neighbors)
+            modelKnn.fit(XKnn, yKnn)
+            next_periodKnn = np.array([[len(sales_data)]])
+            forecastKnn = modelKnn.predict(next_periodKnn)
+            forecastKnn = forecastKnn[0] if isinstance(forecastKnn, (list, np.ndarray)) else float(forecastKnn)
+
+            # Decision Tree Regression
+            XDtr = np.arange(len(sales_data)).reshape(-1, 1)
+            yDtr = np.array(sales_data)
+            modelDtr = DecisionTreeRegressor()
+            modelDtr.fit(XDtr, yDtr)
+            next_periodDtr = np.array([[len(sales_data)]])
+            forecastDtr = modelDtr.predict(next_periodDtr)
+            forecastDtr = forecastDtr[0] if isinstance(forecastDtr, (list, np.ndarray)) else float(forecastDtr)
+
+            # Gradient Boosting Regression
+            XGbr = np.arange(len(sales_data)).reshape(-1, 1)
+            yGbr = np.array(sales_data)
+            modelGbr = GradientBoostingRegressor(n_estimators=100, learning_rate=0.1, max_depth=1, random_state=0, loss='squared_error')
+            modelGbr.fit(XGbr, yGbr)
+            next_periodGbr = np.array([[len(sales_data)]])
+            forecastGbr = modelGbr.predict(next_periodGbr)
+            forecastGbr = forecastGbr[0] if isinstance(forecastGbr, (list, np.ndarray)) else float(forecastGbr)
+
+            # ElasticNet Regression
+            XEr = np.arange(len(sales_data)).reshape(-1, 1)
+            yEr = np.array(sales_data)
+            modelEr = ElasticNet(alpha=1.0, l1_ratio=0.5)
+            modelEr.fit(XEr, yEr)
+            next_periodEr = np.array([[len(sales_data)]])
+            forecastEr = modelEr.predict(next_periodEr)
+            forecastEr = forecastEr[0] if isinstance(forecastEr, (list, np.ndarray)) else float(forecastEr)
+
+            # Lasso Regression
+            XLas = np.arange(len(sales_data)).reshape(-1, 1)
+            yLas = np.array(sales_data)
+            modelLas = Lasso(alpha=1.0)
+            modelLas.fit(XLas, yLas)
+            next_periodLas = np.array([[len(sales_data)]])
+            forecastLas = modelLas.predict(next_periodLas)
+            forecastLas = forecastLas[0] if isinstance(forecastLas, (list, np.ndarray)) else float(forecastLas)
+
+            # LSTM Forecast
+            if not sales_data or len(sales_data) < 4:
+                return JsonResponse({'error': 'Data penjualan tidak mencukupi untuk forecasting.'}, status=400)
+            sales_data_lstm = np.array(sales_data).reshape(-1, 1)
+            scaler = MinMaxScaler(feature_range=(0, 1))
+            scaled_data = scaler.fit_transform(sales_data_lstm)
+            modelLstm = Sequential()
+            modelLstm.add(LSTM(50, return_sequences=True, input_shape=(scaled_data.shape[1], 1)))
+            modelLstm.add(LSTM(50, return_sequences=False))
+            modelLstm.add(Dense(1))
+            modelLstm.compile(optimizer='adam', loss='mean_squared_error')
+            X_train_lstm = scaled_data[:-1].reshape((1, -1, 1))
+            y_train_lstm = scaled_data[1:].reshape((1, -1, 1))
+            modelLstm.fit(X_train_lstm, y_train_lstm, epochs=10, batch_size=1, verbose=2)
+            last_sequence = scaled_data[-1:].reshape((1, -1, 1))
+            forecastLstm = modelLstm.predict(last_sequence)
+            forecastLstm = scaler.inverse_transform(forecastLstm.reshape(-1, 1))
+            forecastLstm = float(forecastLstm[0])
+
+            return JsonResponse({
+                'result': [
+                    {'model': 'arima', 'forecast': forecastArima},
+                    {'model': 'single-exponential-smoothing', 'forecast': forecastSes},
+                    {'model': 'holt-winters', 'forecast': forecastHWSM},
+                    {'model': 'bayesian', 'forecast': forecastBr},
+                    {'model': 'linear-regression', 'forecast': forecastLr},
+                    {'model': 'random-forest', 'forecast': forecastRf},
+                    {'model': 'support-vector-regressor', 'forecast': forecastSvr},
+                    {'model': 'single-moving-average', 'forecast': forecastSma},
+                    {'model': 'double-moving-average', 'forecast': forecastDma},
+                    {'model': 'weighted-moving-average', 'forecast': wma},
+                    {'model': 'gaussian', 'forecast': forecastGpr},
+                    {'model': 'polynomial', 'forecast': forecastPr},
+                    {'model': 'k-nearest-neighbors-regression', 'forecast': forecastKnn},
+                    {'model': 'decision-tree', 'forecast': forecastDtr},
+                    {'model': 'gradient-boosting', 'forecast': forecastGbr},
+                    {'model': 'elasticnet', 'forecast': forecastEr},
+                    {'model': 'lasso-regression', 'forecast': forecastLas},
+                    {'model': 'long-short-term-memory', 'forecast': forecastLstm},
+                ]
+            }, safe=False, status=200)
 
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
-    return JsonResponse({'message': 'Use POST method to send sales data and weights.'}, status=400)
+    return JsonResponse({'message': 'Gunakan metode POST untuk mengirim data penjualan.'}, status=400)
+
+FORECASTING_METHODS = {
+    1: "arima_forecast",
+    2: "simple_exponential_smoothing_forecast",
+    3: "holt_winters_forecast",
+    4: "linear_regression_forecast",
+    5: "random_forest_forecast",
+    6: "svr_forecast",
+    7: "single_moving_average_forecast",
+    8: "double_moving_average_forecast",
+    9: "weighted_moving_average_forecast",
+    10: "gpr_forecast",
+    11: "lstm_forecast",
+    12: "bayesian_regression_forecast",
+    13: "polynomial_regression_forecast",
+    14: "knn_forecast",
+    15: "decision_tree_forecast",
+    16: "gradient_boosting_forecast",
+    17: "elasticnet_forecast",
+    18: "lasso_forecast",
+}
+
+@csrf_exempt
+def best_method_forecast(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            sales_data = data.get('sales_data', [])
+            method_ids = data.get('forecasting_method_id', [])
+
+            if not sales_data or not method_ids:
+                return JsonResponse({'error': 'sales_data dan forecasting_method_id diperlukan.'}, status=400)
+
+            results = []
+            for method_id in method_ids:
+                try:
+                    forecast = run_forecasting(method_id, sales_data)
+                    results.append({'method_id': method_id, 'forecast': forecast})
+                except Exception as e:
+                    results.append({'method_id': method_id, 'error': str(e)})
+
+            return JsonResponse({'results': results}, status=200)
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+    return JsonResponse({'message': 'Gunakan metode POST untuk mengirim data.'}, status=400)
+
+def run_forecasting(method_id, sales_data):
+    if method_id in FORECASTING_METHODS:
+        method_name = FORECASTING_METHODS[method_id]
+        method_function = globals().get(method_name)
+        if method_function:
+            return method_function(sales_data)
+    raise ValueError(f"Metode dengan ID {method_id} tidak ditemukan.")
+
+# arima
+@csrf_exempt  
+def arima_forecast(sales_data):
+	df = pd.DataFrame(sales_data, columns=['sales'])
+	model = ARIMA(df['sales'], order=(1, 1, 1))
+	model_fit = model.fit()
+	forecast = model_fit.forecast(steps = 1)
+	return forecast.tolist()[0]
+
+# simple exponential smoothing
+@csrf_exempt
+def simple_exponential_smoothing_forecast(sales_data):
+	df = pd.DataFrame(sales_data, columns=['sales'])
+	model = SimpleExpSmoothing(df['sales'])
+	model_fit = model.fit()
+	forecast = model_fit.forecast(steps=1)
+	return forecast.tolist()[0]
+
+# holt linear Trend Model (double exponential smoothing)
+@csrf_exempt
+def holt_linear_forecast(sales_data):
+	df = pd.DataFrame(sales_data, columns=['sales'])
+	model = ExponentialSmoothing(df['sales'], trend='add')
+	model_fit = model.fit()
+	forecast = model_fit.forecast(steps=1)
+	return forecast.tolist()[0]
+
+# Holt-Winters Seasonal Model (Triple Exponential Smoothing)
+@csrf_exempt
+def holt_winters_forecast(sales_data):
+	df = pd.DataFrame(sales_data, columns=['sales'])
+	model = ExponentialSmoothing(df['sales'], trend='add', seasonal='add', seasonal_periods=4)
+	model_fit = model.fit()
+	forecast = model_fit.forecast(steps=1)
+	return forecast.tolist()[0]
+
+# linear regression
+@csrf_exempt
+def linear_regression_forecast(sales_data):
+	df = pd.DataFrame(sales_data, columns=['sales'])
+	df['time'] = np.arange(len(df))
+	X = df[['time']]
+	y = df['sales']
+	model = LinearRegression()
+	model.fit(X, y)
+	next_time = len(df)
+	forecast = model.predict([[next_time]])
+	return forecast[0]
+
+# random forest
+@csrf_exempt
+def random_forest_forecast(sales_data):
+	df = pd.DataFrame(sales_data, columns=['sales'])
+	df['time'] = np.arange(len(df))
+	X = df[['time']]
+	y = df['sales']
+	model = RandomForestRegressor(n_estimators=100)
+	model.fit(X, y)
+	next_time = len(df)
+	forecast = model.predict([[next_time]])
+	return forecast[0]
+
+#  svr
+@csrf_exempt
+def svr_forecast(sales_data):
+	df = pd.DataFrame(sales_data, columns=['sales'])
+	df['time'] = np.arange(len(df))
+	X = df[['time']]
+	y = df['sales']
+	model = SVR(kernel='rbf')
+	model.fit(X, y)
+	next_time = len(df)
+	forecast = model.predict([[next_time]])
+	return forecast[0]
+
+# xgboost
+@csrf_exempt
+def xgboost_forecast(sales_data):
+	df = pd.DataFrame(sales_data, columns=['sales'])
+	df['time'] = np.arange(len(df))
+	X = df[['time']]
+	y = df['sales']
+	model = xgb.XGBRegressor(n_estimators=100)
+	model.fit(X, y)
+	next_time = len(df)
+	forecast = model.predict(np.array([[next_time]]))
+	forecast_value = float(forecast[0])
+	return forecast_value
+
+# single moving average
+@csrf_exempt
+def single_moving_average_forecast(sales_data):
+	df = pd.DataFrame(sales_data, columns=['sales'])
+	forecast = df['sales'].rolling(window=3).mean().iloc[-1]  
+	return float(forecast)
+
+# double moving average
+@csrf_exempt
+def double_moving_average_forecast(sales_data):
+	window_size = 2
+	df = pd.DataFrame(sales_data, columns=['sales'])
+	df['SMA1'] = df['sales'].rolling(window=window_size).mean()
+	df['SMA2'] = df['SMA1'].rolling(window=window_size).mean()
+	forecast = 2 * df['SMA1'].iloc[-1] - df['SMA2'].iloc[-1]
+	return float(forecast)
+
+# weighted moving average
+@csrf_exempt
+def weighted_moving_average_forecast(sales_data):
+	weights = np.linspace(0.1, 1, len(sales_data))
+	weights /= weights.sum()
+	weights_arrayWma = np.array(weights)
+	sales_arrayWma = np.array(sales_data)
+	wma = np.sum(weights_arrayWma * sales_arrayWma) / np.sum(weights_arrayWma)
+	return float(wma)
 
 # least square
 @csrf_exempt
-def least_squares_forecast(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            sales_data = data.get('sales_data', [])
-            if not sales_data or len(sales_data) < 2:
-                return JsonResponse({'error': 'Data penjualan tidak mencukupi untuk forecasting.'}, status=400)
-            X = np.arange(len(sales_data)).reshape(-1, 1)
-            y = np.array(sales_data)
-            model = LinearRegression()
-            model.fit(X, y)
-            next_period = np.array([[len(sales_data)]])
-            forecast = model.predict(next_period)[0]
-            return JsonResponse({'forecast': float(forecast)}, status=200)
-
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-
-    return JsonResponse({'message': 'Use POST method to send sales data.'}, status=400)
+def least_squares_forecast(sales_data):
+	X = np.arange(len(sales_data)).reshape(-1, 1)
+	y = np.array(sales_data)
+	model = LinearRegression()
+	model.fit(X, y)
+	next_period = np.array([[len(sales_data)]])
+	forecast = model.predict(next_period)[0]
+	return float(forecast)
 
 # Gaussian Process Regression
 @csrf_exempt
-def gpr_forecast(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            sales_data = data.get('sales_data', [])
-            if not sales_data or len(sales_data) < 4:
-                return JsonResponse({'error': 'Data penjualan tidak mencukupi untuk forecasting.'}, status=400)
-            X = np.arange(len(sales_data)).reshape(-1, 1)
-            y = np.array(sales_data)
-            kernel = C(1.0, (1e-3, 1e3)) * RBF(1.0, (1e-2, 1e2))
-            model = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=10)
-            model.fit(X, y)
-            next_period = np.array([[len(sales_data)]])
-            forecast = model.predict(next_period, return_std=True)
-            return JsonResponse({'forecast': float(forecast[0])}, status=200)
-
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-
-    return JsonResponse({'message': 'Use POST method to send sales data.'}, status=400)
+def gpr_forecast(sales_data):
+	X = np.arange(len(sales_data)).reshape(-1, 1)
+	y = np.array(sales_data)
+	kernel = C(1.0, (1e-3, 1e3)) * RBF(1.0, (1e-2, 1e2))
+	model = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=10)
+	model.fit(X, y)
+	next_period = np.array([[len(sales_data)]])
+	forecast = model.predict(next_period, return_std=True)
+	return float(forecast[0])
 
 # Long Short-Term Memory
 @csrf_exempt
-def lstm_forecast(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            sales_data = data.get('sales_data', [])
-            if not sales_data or len(sales_data) < 4:
-                return JsonResponse({'error': 'Data penjualan tidak mencukupi untuk forecasting.'}, status=400)
-            sales_data = np.array(sales_data).reshape(-1, 1)
-            scaler = MinMaxScaler(feature_range=(0, 1))
-            scaled_data = scaler.fit_transform(sales_data)
-            model = Sequential()
-            model.add(LSTM(50, return_sequences=True, input_shape=(scaled_data.shape[1], 1)))
-            model.add(LSTM(50, return_sequences=False))
-            model.add(Dense(1))
-            model.compile(optimizer='adam', loss='mean_squared_error')
-            X_train = scaled_data[:-1].reshape((1, -1, 1))
-            y_train = scaled_data[1:].reshape((1, -1, 1))
-            model.fit(X_train, y_train, epochs=10, batch_size=1, verbose=2)
-            last_sequence = scaled_data[-1:].reshape((1, -1, 1))
-            forecast = model.predict(last_sequence)
-            forecast = scaler.inverse_transform(forecast.reshape(-1, 1))
-            return JsonResponse({'forecast': float(forecast[0])}, status=200)
-
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-
-    return JsonResponse({'message': 'Use POST method to send sales data.'}, status=400)
+def lstm_forecast(sales_data):
+	sales_data = np.array(sales_data).reshape(-1, 1)
+	scaler = MinMaxScaler(feature_range=(0, 1))
+	scaled_data = scaler.fit_transform(sales_data)
+	model = Sequential()
+	model.add(LSTM(50, return_sequences=True, input_shape=(scaled_data.shape[1], 1)))
+	model.add(LSTM(50, return_sequences=False))
+	model.add(Dense(1))
+	model.compile(optimizer='adam', loss='mean_squared_error')
+	X_train = scaled_data[:-1].reshape((1, -1, 1))
+	y_train = scaled_data[1:].reshape((1, -1, 1))
+	model.fit(X_train, y_train, epochs=10, batch_size=1, verbose=2)
+	last_sequence = scaled_data[-1:].reshape((1, -1, 1))
+	forecast = model.predict(last_sequence)
+	forecast = scaler.inverse_transform(forecast.reshape(-1, 1))
+	return float(forecast[0])
 
 # Bayesian Regression
 @csrf_exempt
-def bayesian_regression_forecast(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            sales_data = data.get('sales_data', [])
-            if not sales_data or len(sales_data) < 4:
-                return JsonResponse({'error': 'Data penjualan tidak mencukupi untuk forecasting.'}, status=400)
-            XBr = np.arange(len(sales_data)).reshape(-1, 1)
-            ybr = np.array(sales_data)
-            model = BayesianRidge()
-            model.fit(XBr, ybr)
-            next_period = np.array([[len(sales_data)]])
-            forecast = model.predict(next_period)[0]
-            return JsonResponse({'forecast': float(forecast)}, status=200)
-
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-
-    return JsonResponse({'message': 'Use POST method to send sales data.'}, status=400)
+def bayesian_regression_forecast(sales_data):
+	XBr = np.arange(len(sales_data)).reshape(-1, 1)
+	ybr = np.array(sales_data)
+	model = BayesianRidge()
+	model.fit(XBr, ybr)
+	next_period = np.array([[len(sales_data)]])
+	forecast = model.predict(next_period)[0]
+	return float(forecast)
 
 # Polynomial Regression
 @csrf_exempt
-def polynomial_regression_forecast(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            sales_data = data.get('sales_data', [])
-            if not sales_data or len(sales_data) < 4:
-                return JsonResponse({'error': 'Data penjualan tidak mencukupi untuk forecasting.'}, status=400)
-            X = np.arange(len(sales_data)).reshape(-1, 1)
-            y = np.array(sales_data)
-            poly = PolynomialFeatures(degree=2)
-            X_poly = poly.fit_transform(X)
-            model = LinearRegression()
-            model.fit(X_poly, y)
-            next_period = np.array([[len(sales_data)]])
-            next_period_poly = poly.transform(next_period)
-            forecast = model.predict(next_period_poly)
-            return JsonResponse({'forecast': float(forecast[0])}, status=200)
-
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-
-    return JsonResponse({'message': 'Use POST method to send sales data.'}, status=400)
+def polynomial_regression_forecast(sales_data):
+	X = np.arange(len(sales_data)).reshape(-1, 1)
+	y = np.array(sales_data)
+	poly = PolynomialFeatures(degree=2)
+	X_poly = poly.fit_transform(X)
+	model = LinearRegression()
+	model.fit(X_poly, y)
+	next_period = np.array([[len(sales_data)]])
+	next_period_poly = poly.transform(next_period)
+	forecast = model.predict(next_period_poly)
+	return float(forecast[0])
 
 # K-Nearest Neighbors Regression (KNN Regression)
 @csrf_exempt
-def knn_forecast(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            sales_data = data.get('sales_data', [])
-            n_neighbors = data.get('n_neighbors', 3)
-            if n_neighbors < 1:
-                return JsonResponse({'error': 'n_neighbors harus lebih besar atau sama dengan 1.'}, status=400)
-            if not sales_data or len(sales_data) < 4:
-                return JsonResponse({'error': 'Data penjualan tidak mencukupi untuk forecasting.'}, status=400)
-            X = np.arange(len(sales_data)).reshape(-1, 1)
-            y = np.array(sales_data)
-            model = KNeighborsRegressor(n_neighbors=n_neighbors)
-            model.fit(X, y)
-            next_period = np.array([[len(sales_data)]])
-            forecast = model.predict(next_period)
-            return JsonResponse({'forecast': float(forecast[0])}, status=200)
-
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-
-    return JsonResponse({'message': 'Use POST method to send sales data.'}, status=400)
+def knn_forecast(sales_data):
+	n_neighbors = 3
+	X = np.arange(len(sales_data)).reshape(-1, 1)
+	y = np.array(sales_data)
+	model = KNeighborsRegressor(n_neighbors=n_neighbors)
+	model.fit(X, y)
+	next_period = np.array([[len(sales_data)]])
+	forecast = model.predict(next_period)
+	return float(forecast[0])
 
 # Decision Tree Regression
 @csrf_exempt
-def decision_tree_forecast(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            sales_data = data.get('sales_data', [])
-            if not sales_data or len(sales_data) < 4:
-                return JsonResponse({'error': 'Data penjualan tidak mencukupi untuk forecasting.'}, status=400)
-            X = np.arange(len(sales_data)).reshape(-1, 1)
-            y = np.array(sales_data)
-            model = DecisionTreeRegressor()
-            model.fit(X, y)
-            next_period = np.array([[len(sales_data)]])
-            forecast = model.predict(next_period)
-            return JsonResponse({'forecast': float(forecast[0])}, status=200)
-
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-
-    return JsonResponse({'message': 'Use POST method to send sales data.'}, status=400)
+def decision_tree_forecast(sales_data):
+	X = np.arange(len(sales_data)).reshape(-1, 1)
+	y = np.array(sales_data)
+	model = DecisionTreeRegressor()
+	model.fit(X, y)
+	next_period = np.array([[len(sales_data)]])
+	forecast = model.predict(next_period)
+	return float(forecast[0])
 
 # Gradient Boosting Regression
 @csrf_exempt
-def gradient_boosting_forecast(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            sales_data = data.get('sales_data', [])
-            if not sales_data or len(sales_data) < 4:
-                return JsonResponse({'error': 'Data penjualan tidak mencukupi untuk forecasting.'}, status=400)
-            X = np.arange(len(sales_data)).reshape(-1, 1)
-            y = np.array(sales_data)
-            model = GradientBoostingRegressor(n_estimators=100, learning_rate=0.1, max_depth=1, random_state=0, loss='squared_error')
-            model.fit(X, y)
-            next_period = np.array([[len(sales_data)]])
-            forecast = model.predict(next_period)
-            return JsonResponse({'forecast': float(forecast[0])}, status=200)
-
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-
-    return JsonResponse({'message': 'Use POST method to send sales data.'}, status=400)
+def gradient_boosting_forecast(sales_data):
+	X = np.arange(len(sales_data)).reshape(-1, 1)
+	y = np.array(sales_data)
+	model = GradientBoostingRegressor(n_estimators=100, learning_rate=0.1, max_depth=1, random_state=0, loss='squared_error')
+	model.fit(X, y)
+	next_period = np.array([[len(sales_data)]])
+	forecast = model.predict(next_period)
+	return float(forecast[0])
 
 # ElasticNet Regression
 @csrf_exempt
-def elasticnet_forecast(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            sales_data = data.get('sales_data', [])
-            if not sales_data or len(sales_data) < 4:
-                return JsonResponse({'error': 'Data penjualan tidak mencukupi untuk forecasting.'}, status=400)
-            X = np.arange(len(sales_data)).reshape(-1, 1)
-            y = np.array(sales_data)
-            model = ElasticNet(alpha=1.0, l1_ratio=0.5)
-            model.fit(X, y)
-            next_period = np.array([[len(sales_data)]])
-            forecast = model.predict(next_period)
-            return JsonResponse({'forecast': float(forecast[0])}, status=200)
-
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-
-    return JsonResponse({'message': 'Use POST method to send sales data.'}, status=400)
+def elasticnet_forecast(sales_data):
+	X = np.arange(len(sales_data)).reshape(-1, 1)
+	y = np.array(sales_data)
+	model = ElasticNet(alpha=1.0, l1_ratio=0.5)
+	model.fit(X, y)
+	next_period = np.array([[len(sales_data)]])
+	forecast = model.predict(next_period)
+	return float(forecast[0])
 
 # Lasso Regression
 @csrf_exempt
-def lasso_forecast(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            sales_data = data.get('sales_data', [])
-            if not sales_data or len(sales_data) < 4:
-                return JsonResponse({'error': 'Data penjualan tidak mencukupi untuk forecasting.'}, status=400)
-            X = np.arange(len(sales_data)).reshape(-1, 1)
-            y = np.array(sales_data)
-            model = Lasso(alpha=1.0)
-            model.fit(X, y)
-            next_period = np.array([[len(sales_data)]])
-            forecast = model.predict(next_period)
-            return JsonResponse({'forecast': float(forecast[0])}, status=200)
-
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-
-    return JsonResponse({'message': 'Use POST method to send sales data.'}, status=400)
+def lasso_forecast(sales_data):
+	X = np.arange(len(sales_data)).reshape(-1, 1)
+	y = np.array(sales_data)
+	model = Lasso(alpha=1.0)
+	model.fit(X, y)
+	next_period = np.array([[len(sales_data)]])
+	forecast = model.predict(next_period)
+	return float(forecast[0])
 
 def preprocess_data(sales_data):
     df = pd.DataFrame(sales_data, columns=['sales'])
@@ -727,7 +545,7 @@ def preprocess_data(sales_data):
     return df
 
 @csrf_exempt
-def best_model(request):
+def modelling(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
@@ -765,15 +583,15 @@ def best_model(request):
                 'mse': mean_squared_error(test_y, ses_forecast)
             })
 
-            # Holt Linear Trend Model
-            holt_model = ExponentialSmoothing(train_y, trend='add').fit()
-            holt_forecast = holt_model.forecast(steps=len(test_y))
-            results.append({
-                'model': 'Holt Linear',
-               #  'forecast': holt_model.forecast(steps=1)[0],
-                'mae': mean_absolute_error(test_y, holt_forecast),
-                'mse': mean_squared_error(test_y, holt_forecast)
-            })
+            # # Holt Linear Trend Model
+            # holt_model = ExponentialSmoothing(train_y, trend='add').fit()
+            # holt_forecast = holt_model.forecast(steps=len(test_y))
+            # results.append({
+            #     'model': 'Holt Linear',
+            #    #  'forecast': holt_model.forecast(steps=1)[0],
+            #     'mae': mean_absolute_error(test_y, holt_forecast),
+            #     'mse': mean_squared_error(test_y, holt_forecast)
+            # })
 
             # Holt-Winters Seasonal Model
             hw_model = ExponentialSmoothing(train_y, trend='add', seasonal='add', seasonal_periods=4).fit()
@@ -815,15 +633,15 @@ def best_model(request):
                 'mse': mean_squared_error(test_y, svr_forecast)
             })
 
-            # XGBoost Model
-            xgb_model = xgb.XGBRegressor(n_estimators=100).fit(train_X, train_y)
-            xgb_forecast = xgb_model.predict(test_X)
-            results.append({
-                'model': 'XGBoost',
-               #  'forecast': xgb_model.predict([[len(df)]])[0],
-                'mae': mean_absolute_error(test_y, xgb_forecast),
-                'mse': mean_squared_error(test_y, xgb_forecast)
-            })
+            # # XGBoost Model
+            # xgb_model = xgb.XGBRegressor(n_estimators=100).fit(train_X, train_y)
+            # xgb_forecast = xgb_model.predict(test_X)
+            # results.append({
+            #     'model': 'XGBoost',
+            #    #  'forecast': xgb_model.predict([[len(df)]])[0],
+            #     'mae': mean_absolute_error(test_y, xgb_forecast),
+            #     'mse': mean_squared_error(test_y, xgb_forecast)
+            # })
 
             # Single Moving Average Model
             sma_forecast = y.rolling(window=3).mean().iloc[-1]
@@ -836,7 +654,7 @@ def best_model(request):
             })
 
             # Weighted Moving Average Model
-            weights = np.linspace(1, 0.5, len(train_y))
+            weights = np.linspace(0.1, 1, len(train_y))
             weights /= weights.sum()
             wma_forecast = np.dot(train_y[-len(weights):], weights)
             results.append({
@@ -913,7 +731,7 @@ def best_model(request):
 
             # Menambahkan hasil ke results
             results.append({
-               'model': 'LSTM',
+               'model': 'Long Short Term Memory',
                # 'forecast': float(next_lstm_forecast[0][0]), 
                'mae': lstm_mae,
                'mse': lstm_mse
@@ -1041,7 +859,9 @@ def best_model(request):
             response_data = {
                 'models': sorted_results,  
                 'best_models': best_models, 
-                'worst_models': worst_models 
+                'worst_models': worst_models,
+                'data_training' : train_y.tolist(),
+					 'data_testing' : test_y.tolist()
             }
 
             return JsonResponse(response_data, safe=False, status=200)
