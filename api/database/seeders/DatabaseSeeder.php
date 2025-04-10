@@ -700,7 +700,7 @@ class DatabaseSeeder extends Seeder
 				[40, 55, 35, 38, 45, 52, 36, 49, 43, 55, 37, 39, 51, 47, 45, 42, 48, 54, 47, 50, 45]
 			]
 		);
-		$trainTestData->zip($products)->each(function ($pair) {
+		$trainTestDataExam->zip($products)->each(function ($pair) {
 			TrainTestData::factory(1)->create([
 				'train_test_data' => json_encode($pair[0]),
 				'product_id' => $pair[1]['id'],
