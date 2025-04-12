@@ -23,6 +23,19 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
 use Laravel\Socialite\Facades\Socialite;
 
+Route::get('/akses', function () {
+	return response()->json([
+		"admin" => [
+			"email" => "admin1@gmail.com",
+			"password"=>"password"
+		],
+		"user" => [
+			"email" => "user1@gmail.com",
+			"password"=>"password"
+		]
+	]);
+});
+
 Route::get('/tes-email', function () {
 	try {
 		Mail::to('alvindian85@gmail.com')->send(new invoiceEmail());

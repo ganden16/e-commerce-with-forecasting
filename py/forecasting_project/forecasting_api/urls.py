@@ -2,6 +2,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+	 path('', views.check_api_status, name='check_api_status'),
     path('forecast/arima', views.arima_forecast, name='arima_forecast'),
     path('forecast/ses', views.simple_exponential_smoothing_forecast, name='simple_exponential_smoothing_forecast'),
     path('forecast/ar', views.auto_regressive_forecast, name='auto_regressive_forecast'),

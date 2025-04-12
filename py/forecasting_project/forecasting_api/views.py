@@ -509,3 +509,6 @@ def safe_convert(value):
         else:
             return None
     return value
+
+def check_api_status(request):
+    return JsonResponse({'status': 'OK'})

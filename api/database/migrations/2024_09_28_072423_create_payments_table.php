@@ -30,7 +30,7 @@ return new class extends Migration
 				'failure'
 			])->default('pending');
 			$table->timestamp('payment_date')->nullable();
-			$table->timestamp('expire_page');
+			$table->timestamp('expire_page')->nullable();
 			$table->timestamps();
 		});
 	}
