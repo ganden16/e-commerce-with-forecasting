@@ -114,7 +114,7 @@ export default function Login() {
 										</div>
 									</div>
 
-									<div className="flex items-center justify-end">
+									<div className="flex items-center justify-between">
 										{/* <div className="flex items-center">
 											<input
 												id="remember-me"
@@ -127,6 +127,11 @@ export default function Login() {
 											</label>
 										</div> */}
 
+										<div className="text-sm leading-6">
+											<a target="_blank" href={process.env.NEXT_PUBLIC_BASE_API_URL + '/api/akses'} className="font-semibold text-indigo-600 hover:text-indigo-500 underline">
+												Lihat Akses Login
+											</a>
+										</div>
 										<div className="text-sm leading-6">
 											<Link href="/lupa-password" className="font-semibold text-indigo-600 hover:text-indigo-500">
 												Lupa Password?
