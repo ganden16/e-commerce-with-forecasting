@@ -44,7 +44,7 @@ class User extends Authenticatable
 
 	public function region()
 	{
-		return $this->hasOne(Region::class, 'region_id', 'id');
+		return $this->belongsTo(Region::class, 'region_id', 'id');
 	}
 	public function orders()
 	{

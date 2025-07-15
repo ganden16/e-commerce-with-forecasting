@@ -1,7 +1,7 @@
 import {Badge} from '@/components/catalyst/badge'
 import {Divider} from '@/components/catalyst/divider'
 
-export function Stat({title, value}) {
+export default function Stat({title, value}) {
 	return (
 		<div>
 			<Divider />

@@ -8,7 +8,7 @@ import {Input} from '@/components/catalyst/input'
 import {Select} from '@/components/catalyst/select'
 import {useState} from 'react'
 
-export function RefundOrder({amount, ...props}) {
+export default function RefundOrder({amount, ...props}) {
 	let [isOpen, setIsOpen] = useState(false)
 
 	return (

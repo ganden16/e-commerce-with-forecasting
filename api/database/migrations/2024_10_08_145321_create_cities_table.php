@@ -13,10 +13,8 @@ return new class extends Migration
 	{
 		Schema::create('cities', function (Blueprint $table) {
 			$table->id();
-			$table->foreignId('province_id');
 			$table->string('name');
-			$table->string('type');
-			$table->string('postal_code');
+			$table->foreignId('province_id');
 			$table->timestamps();
 		});
 	}

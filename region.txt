@@ -1,0 +1,5 @@
+jawa timur : 18
+surabaya : 577
+sidoarjo : 583
+gedangan : 5997
+sawotratap : 70925

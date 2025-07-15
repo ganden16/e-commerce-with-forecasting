@@ -10,32 +10,43 @@ class RajaOngkir
 	{
 		$response = Http::withHeaders([
 			'key' => env('RAJA_ONGKIR_KEY')
-		])->withoutVerifying()->get(env('RAJAONGKIR_URL') . '/province');
+		])->withoutVerifying()->get(env('RAJAONGKIR_URL') . '/api/v1/destination/province');
 
-		$provinces = collect($response['rajaongkir']['results']);
+		$provinces = collect($response['data']);
 
 		return $provinces;
 	}
-	public static function getAllCities()
+
+	public static function getCitiesByProvince($provinceId)
 	{
 		$response = Http::withHeaders([
-			'key' => env('RAJA_ONGKIR_KEY')
-		])->withoutVerifying()->get(env('RAJAONGKIR_URL') . '/city');
+				'key' => env('RAJA_ONGKIR_KEY')
+			])
+			->withoutVerifying()->get(env('RAJAONGKIR_URL') . '/api/v1/destination/city/'. $provinceId);
 
-		$cities = collect($response['rajaongkir']['results']);
+		$cities = collect($response['data']);
 
 		return $cities;
 	}
-	public static function getAllSubdistricts($cityId = null, $subdistrictId = null)
+
+	public static function getDistrictByCity($cityId)
 	{
 		$response = Http::withHeaders([
-			'key' => env('RAJA_ONGKIR_KEY')
-		])->withQueryParameters([
-			'city' => $cityId,
-			'id' => $subdistrictId,
-		])->withoutVerifying()->get(env('RAJAONGKIR_URL') . '/subdistrict');
+				'key' => env('RAJA_ONGKIR_KEY')
+			])->withoutVerifying()->get(env('RAJAONGKIR_URL') . '/api/v1/destination/district/'. $cityId);
 
-		$subdistricts = collect($response['rajaongkir']['results']);
+			$districts = collect($response['data']);
+
+		return $districts;
+	}
+
+	public static function getSubdistrictByDistrict($districtId)
+	{
+		$response = Http::withHeaders([
+				'key' => env('RAJA_ONGKIR_KEY')
+			])->withoutVerifying()->get(env('RAJAONGKIR_URL') . '/api/v1/destination/sub-district/'. $districtId);
+
+			$subdistricts = collect($response['data']);
 
 		return $subdistricts;
 	}

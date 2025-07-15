@@ -8,14 +8,14 @@ const AuthMiddleware = ({children}) => {
 
 	useEffect(() => {
 		if(!user) {
-			router.push('/login')
+			window.location = '/login'
 		}
 		if(user?.is_admin) {
-			router.push('/admin')
+			window.location = '/admin'
 		}
 	}, [router])
 
-	return user && !user?.is_admin ? children : null
+	return user && !user?.is_admin ? children : <></>
 }
 
 

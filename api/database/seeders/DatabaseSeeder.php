@@ -7,6 +7,7 @@ use App\Models\Cart;
 use App\Models\Category;
 use App\Models\City;
 use App\Models\DeliveryDetail;
+use App\Models\District;
 use App\Models\ForecastingMethod;
 use App\Models\Order;
 use App\Models\OrderDetail;
@@ -15,6 +16,8 @@ use App\Models\Product;
 use App\Models\ProductQna;
 use App\Models\ProductReview;
 use App\Models\Province;
+use App\Models\Region;
+use App\Models\Subdistrict;
 use App\Models\TrainTestData;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -265,12 +268,15 @@ class DatabaseSeeder extends Seeder
 		});
 		$products = Product::all();
 
+		$regions = Region::factory(15)->create();
+
 		//users role admin
 		for ($i = 1; $i <= 20; $i++) {
 			User::factory()->create([
 				'email' => 'admin' . $i . '@mail.com',
 				'username' => 'admin' . $i,
 				'is_admin' => true,
+				'region_id' => $regions->random()->id,
 			]);
 		}
 
@@ -280,6 +286,7 @@ class DatabaseSeeder extends Seeder
 				'email' => 'user' . $i . '@mail.com',
 				'username' => 'user' . $i,
 				'is_admin' => false,
+				'region_id' => $regions->random()->id,
 			]);
 			$usedProductIds = [];
 			for ($j = 0; $j < 5; $j++) {
@@ -642,26 +649,47 @@ class DatabaseSeeder extends Seeder
 		// 	]);
 		// }
 
-		//provinces
-		$provinces = RajaOngkir::getAllProvinces();
-		$provinces->each(function ($province) {
-			Province::create([
-				'id' => $province['province_id'],
-				'name' => $province['province'],
-			]);
-		});
 
-		//cities
-		$cities = RajaOngkir::getAllCities();
-		$cities->each(function ($city) {
-			City::create([
-				'id' => $city['city_id'],
-				'province_id' => $city['province_id'],
-				'name' => $city['city_name'],
-				'type' => $city['type'],
-				'postal_code' => $city['postal_code'],
-			]);
-		});
+
+		//region
+		// $provinces = RajaOngkir::getAllProvinces();
+		// $provinces->each(function ($province) {
+		// 	Province::create([
+		// 		'id' => $province['id'],
+		// 		'name' => $province['name'],
+		// 	]);
+
+		// 	$cityByProvince = RajaOngkir::getCitiesByProvince($province['id']);
+		// 	$cityByProvince->each(function ($city) use ($province) {
+		// 		City::create([
+		// 			'id' => $city['id'],
+		// 			'name' => $city['name'],
+		// 			'province_id' => $province['id'],
+		// 		]);
+
+		// 		$districtByCity = RajaOngkir::getDistrictByCity($city['id']);
+		// 		$districtByCity->each(function ($district) use ($city, $province) {
+		// 			District::create([
+		// 				'id' => $district['id'],
+		// 				'name' => $district['name'],
+		// 				'city_id' => $city['id'],
+		// 				'province_id' => $province['id'],
+		// 				'postal_code' => $district['zip_code'] ?? null,
+		// 			]);
+		// 			$subdistrictByDistrict = RajaOngkir::getSubdistrictByDistrict($district['id']);
+		// 			$subdistrictByDistrict->each(function ($village) use ($district, $city, $province) {
+		// 				Subdistrict::create([
+		// 					'id' => $village['id'],
+		// 					'name' => $village['name'],
+		// 					'district_id' => $district['id'],
+		// 					'city_id' => $city['id'],
+		// 					'province_id' => $province['id'],
+		// 					'postal_code' => $village['zip_code'] ?? null,
+		// 				]);
+		// 			});
+		// 		});
+		// 	});
+		// });
 
 		//TrainTestData
 		$trainTestData = collect([

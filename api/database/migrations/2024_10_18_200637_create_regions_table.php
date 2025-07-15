@@ -13,13 +13,11 @@ return new class extends Migration
 	{
 		Schema::create('regions', function (Blueprint $table) {
 			$table->id();
-			$table->foreignId('user_id');
 			$table->unsignedInteger('province_id');
 			$table->unsignedInteger('city_id');
+			$table->unsignedInteger('district_id');
 			$table->unsignedInteger('subdistrict_id');
-			$table->unsignedInteger('subdistrict');
-			$table->string('type');
-			$table->string('postal_code');
+			$table->string('postal_code')->nullable();
 			$table->timestamps();
 		});
 	}

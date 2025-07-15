@@ -20,9 +20,7 @@ return new class extends Migration
 			$table->timestamp('email_verified_at')->nullable();
 			$table->string('password');
 			$table->text('address');
-			$table->unsignedInteger('subdistrict_id');
-			// $table->foreignId('province_id');
-			// $table->foreignId('city_id');
+			$table->unsignedInteger('region_id')->nullable();
 			$table->string('telephone')->nullable();
 			$table->string('whatsaap');
 			$table->boolean('gender');

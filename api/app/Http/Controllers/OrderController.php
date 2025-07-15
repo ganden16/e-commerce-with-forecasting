@@ -267,8 +267,8 @@ class OrderController extends Controller
 			foreach ($validated['details'] as $detail) {
 				$itemDetails[] = [
 					'id' => $detail['product_id'],
-					// 'price' => intval($detail['price']),
-					'price' => 1,
+					'price' => intval($detail['price']),
+					// 'price' => 1,
 					'quantity' => $detail['quantity'],
 					'name' => $detail['product_name'],
 				];
@@ -276,16 +276,16 @@ class OrderController extends Controller
 
 			$itemDetails[] = [
 				'id' => 'ONGKIR',
-				// 'price' => intval($validated['shipping_cost']),
-				'price' => 1,
+				'price' => intval($validated['shipping_cost']),
+				// 'price' => 1,
 				'quantity' => 1,
 				'name' => 'Ongkos Kirim'
 			];
 
 			$itemDetails[] = [
 				'id' => 'APP_FEE',
-				'price' => 1,
-				// 'price' => 1000,
+				// 'price' => 1,
+				'price' => 1000,
 				'quantity' => 1,
 				'name' => 'Biaya Aplikasi'
 			];

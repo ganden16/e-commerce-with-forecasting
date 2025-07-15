@@ -19,6 +19,7 @@ use App\Mail\invoiceEmail;
 use App\Models\City;
 use App\Models\Province;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
 use Laravel\Socialite\Facades\Socialite;
@@ -86,10 +87,14 @@ Route::prefix('region')->group(function () {
 		$city = City::where('province_id', $provinceId)->get();
 		return response()->json($city);
 	});
+	Route::get('/district', function (Request $request) {
+		$cityId = $request->query('cityId');
+		$district = RajaOngkir::getDistrictByCity($cityId);
+		return response()->json($district);
+	});
 	Route::get('/subdistrict', function (Request $request) {
-		$cityId = $request->query('cityId') ?? null;
-		$subdistrictId = $request->query('subdistrictId') ?? null;
-		$subdistricts = RajaOngkir::getAllSubdistricts($cityId, $subdistrictId);
+		$districtId = $request->query('districtId');
+		$subdistricts = RajaOngkir::getDistrictByCity($districtId);
 		return response()->json($subdistricts);
 	});
 });
@@ -160,4 +165,13 @@ Route::prefix('users')->group(function () {
 	Route::get('/admin', [UserController::class, 'getAllAdmins']);
 	Route::get('/admin/{id}', [UserController::class, 'showAdmin']);
 	Route::post('/admin', [UserController::class, 'addAdmin']);
+});
+
+Route::get('/test-ssl', function () {
+    try {
+        $response = Http::get('https://jsonplaceholder.typicode.com/posts/1 ');
+        return $response->json();
+    } catch (\Exception $e) {
+        return 'Error: ' . $e->getMessage();
+    }
 });

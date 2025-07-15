@@ -41,7 +41,7 @@ export default function DetailProduk() {
 		if(user?.is_admin) {
 			return router.push('/admin')
 		}
-		const existingCartItem = currentCart.find((cartItem) => cartItem.product_id === productId)
+		const existingCartItem = currentCart?.find((cartItem) => cartItem.product_id === productId)
 		if(existingCartItem) {
 			const updatedCartItem = {
 				...existingCartItem,

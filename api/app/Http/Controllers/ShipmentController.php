@@ -19,17 +19,15 @@ class ShipmentController extends Controller
 			'numeric' => ':attribute harus angka'
 		]);
 
-		$response = Http::withOptions([
-			'verify' => false
-		])->post(env('RAJAONGKIR_URL') . '/cost', [
-			'key' => env('RAJA_ONGKIR_KEY'),
-			'origin' => 5634,
-			'originType' => 'subdistrict',
-			'destination' => $request->destination,
-			'destinationType' => 'subdistrict',
-			'weight' => $request->weight,
-			// 'courier' => $request->courier,
-			'courier' => 'jnt:jne:pos:sicepat:anteraja:ninja'
+		$response = Http::withHeaders([
+				'key' => env('RAJA_ONGKIR_KEY')
+			])
+			->post(env('RAJAONGKIR_URL') . '/api/v1/calculate/district/domestic-cost', [
+				'origin' => 5997, //gedangan, sidoarjo, jawa timur
+				'destination' => $request->destination,
+				'weight' => $request->weight,
+				// 'courier' => $request->courier,
+				'courier' => 'jnt:jne:pos:sicepat:anteraja:ninja'
 		]);
 
 		$responseData = json_decode($response->body(), true);
@@ -37,7 +35,7 @@ class ShipmentController extends Controller
 		$costData = $responseData['rajaongkir']['results'][0]['costs'][0]['cost'][0]['value'];
 
 		// return response()->json($costData);
-		return response()->json($responseData['rajaongkir']['results']);
+		return response()->json($responseData['data']);
 	}
 
 	public function tracking(Request $request)
@@ -48,15 +46,13 @@ class ShipmentController extends Controller
 		]);
 
 		try {
-			$response = Http::withOptions([
-				'verify' => false
-			])->post(env('RAJAONGKIR_URL') . '/waybill', [
-				'key' => env('RAJA_ONGKIR_KEY'),
-				'waybill' => $request->resi,
-				'courier' => $request->courier
-			]);
-			$response = $response['rajaongkir']['manifest'];
-			return response()->json($response);
+			$response = Http::withHeaders([
+				'key' => env('RAJA_ONGKIR_KEY')
+			])->post(env('RAJAONGKIR_URL') . '/api/v1/track/waybill?awb='.$request->resi.'&courier='.$request->courier);
+
+			$responseData = json_decode($response->body(), true);
+
+			return response()->json($responseData['data']['manifest']);
 		} catch (\Throwable $th) {
 			return response()->json($th);
 		}

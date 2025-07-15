@@ -57,7 +57,6 @@ function AuthWrapper({children}) {
 	} else {
 		return <>{children}</>
 	}
-
 }
 
 export default function App({Component, pageProps}) {
