@@ -4,7 +4,7 @@ import AuthMiddleware from '@/components/authMiddleware'
 import {useEffect, useRef, useState} from 'react'
 import {useDispatch, useSelector} from 'react-redux'
 import {formatRupiah} from '@/helper/formater'
-import {createOrder, getAllCarts, getAllProvinces, getCityByProvinceId, getSubdistrict, shipmentCost} from '@/lib/fetchApi'
+import {createOrder, getAllCarts, getAllProvinces, getCityByProvinceId, getDistrictByCityId, getSubdistrict, getSubdistrictByDistrictId, shipmentCost} from '@/lib/fetchApi'
 import Link from 'next/link'
 import {SweetAlertConfirm, SweetAlertError, SweetAlertSuccess} from '@/components/sweetAlert'
 import {ClipLoader} from 'react-spinners'
@@ -32,11 +32,13 @@ export default function Checkout() {
 	const formRef = useRef({})
 	const [provinces, setProvinces] = useState(null)
 	const [cities, setCities] = useState(null)
+	const [district, setDistrict] = useState(null)
 	const [subdistrict, setSubdistrict] = useState(null)
 	const initialSelectedRegion = {
-		province: null,
-		city: null,
-		subdistrict: null,
+		province_id: null,
+		city_id: null,
+		district_id: null,
+		subdistrict_id: null,
 	}
 	const [selectedRegion, setSelectedRegion] = useState(initialSelectedRegion)
 	const [courierList, setCourierList] = useState(null)
@@ -46,29 +48,35 @@ export default function Checkout() {
 	const [orderCode, setOrderCode] = useState(null)
 
 	const handleProvinceChange = (event) => {
-		const selectedProvince = provinces.find(prov => prov.id === parseInt(event.target.value))
 		setSelectedRegion((prevState) => ({
-			...prevState,
-			province: selectedProvince,
-			city: null,
-			subdistrict: null
+			province_id: event.target.value,
+			city_id: null,
+			district_id: null,
+			subdistrict_id: null
 		}))
 	}
 
 	const handleCityChange = (event) => {
-		const selectedCity = cities.find(city => city.id === parseInt(event.target.value))
 		setSelectedRegion((prevState) => ({
 			...prevState,
-			city: selectedCity,
-			subdistrict: null
+			city_id: event.target.value,
+			district_id: null,
+			subdistrict_id: null
+		}))
+	}
+
+	const handleDistrictChange = (event) => {
+		setSelectedRegion((prevState) => ({
+			...prevState,
+			district_id: event.target.value,
+			subdistrict_id: null,
 		}))
 	}
 
 	const handleSubdistrictChange = (event) => {
-		const selectedSubdistrict = subdistrict.find(sub => sub.subdistrict_id == event.target.value)
 		setSelectedRegion((prevState) => ({
 			...prevState,
-			subdistrict: selectedSubdistrict,
+			subdistrict_id: event.target.value,
 		}))
 	}
 
@@ -82,27 +90,14 @@ export default function Checkout() {
 	useEffect(() => {
 		getAllProvinces((res) => {
 			setProvinces(res.data)
-		}, (err) => {
-
-		})
-		getSubdistrict('', user?.subdistrict_id, (res) => {
-			setSelectedRegion({
-				province: {
-					id: parseInt(res.data.province_id),
-					name: res.data.province
-				},
-				city: {
-					id: parseInt(res.data.city_id),
-					name: res.data.city
-				},
-				subdistrict: {
-					subdistrict_id: parseInt(res.data.subdistrict_id),
-					postal_code: parseInt(res.data.postal_code),
-					subdistrict_name: res.data.subdistrict_name
-				}
-			})
-			setLoadingSelectedRegionFirst(false)
 		}, (err) => {})
+		setSelectedRegion({
+			province_id: user.province_id ?? null,
+			city_id: user.city_id ?? null,
+			district_id: user.district_id ?? null,
+			subdistrict_id: user.subdistrict_id ?? null,
+		})
+		setLoadingSelectedRegionFirst(false)
 
 		// const scriptUrl = 'https://app.sandbox.midtrans.com/snap/snap.js'
 		// // const scriptUrl = 'https://app.midtrans.com/snap/snap.js'
@@ -120,24 +115,48 @@ export default function Checkout() {
 	}, [])
 
 	useEffect(() => {
-		if(selectedRegion?.province?.id) {
-			getCityByProvinceId(selectedRegion.province.id, (res) => {
-				setCities(res.data)
-			}, (err) => {
-
-			})
-		}
-
-	}, [selectedRegion.province])
-
-	useEffect(() => {
-		if(selectedRegion?.city?.id) {
-			getSubdistrict(selectedRegion.city.id, '', (res) => {
-				setSubdistrict(res.data)
-			}, (err) => {})
-		}
-
-	}, [selectedRegion.city])
+			if(selectedRegion?.province_id) {
+				getCityByProvinceId(selectedRegion.province_id, (res) => {
+					setCities(res.data)
+				}, (err) => {
+	
+				})
+			}
+		}, [selectedRegion.province_id])
+	
+		useEffect(() => {
+			if(selectedRegion?.city_id) {
+				getDistrictByCityId(selectedRegion.city_id, (res) => {
+					setDistrict(res.data)
+				}, (err) => {
+	
+				})
+			}
+	
+		}, [selectedRegion.city_id])
+	
+		useEffect(() => {
+			if(selectedRegion?.district_id) {
+				getSubdistrictByDistrictId(selectedRegion.district_id, (res) => {
+					setSubdistrict(res.data)
+				}, (err) => {
+	
+				})
+			}
+	
+		}, [selectedRegion.district_id])
+	
+		useEffect(() => {
+			if (selectedRegion?.subdistrict_id && subdistrict) {
+			  const selectedSubdistrict = subdistrict.find(sub => 
+					Number(sub.id) === Number(selectedRegion.subdistrict_id)
+			  )
+			  if (selectedSubdistrict) {
+					formRef.current.postal_code.value = selectedSubdistrict.zip_code
+			  }
+		 }
+	
+		}, [selectedRegion.subdistrict_id])
 
 	const handleClickChooseCourier = () => {
 		setLoadingChooseCourier(true)
@@ -146,15 +165,11 @@ export default function Checkout() {
 			return accumulator + (cartItem.product.weight * cartItem.quantity)
 		}, 0)
 		shipmentCost({
-			destination: selectedRegion.subdistrict.subdistrict_id,
+			destination: selectedRegion.district_id,
 			weight: totalWeight
 		}, (res) => {
-			const filteredCourierList = res.data.map((courier) => {
-				if(courier.code === "sicepat" && totalWeight < 10000) {
-					const filteredCosts = courier.costs.filter((service) => service.service !== "GOKIL")
-					return {...courier, costs: filteredCosts}
-				}
-				return courier
+			const filteredCourierList = res.data.filter((courier) => {
+				return courier.service != 'GOKIL' && totalWeight < 10000
 			})
 			setCourierList(filteredCourierList)
 			setLoadingChooseCourier(false)
@@ -176,16 +191,13 @@ export default function Checkout() {
 
 	if(courierList) {
 		courierList.forEach(courier => {
-			courier.costs.forEach(service => {
-				const costValue = service.cost[0].value
-				if(!cheapestCourier || costValue < cheapestCourier.cost) {
-					cheapestCourier = {
-						name: courier.name,
-						service: service.service,
-						cost: costValue,
-					}
+			if(!cheapestCourier || courier.cost < cheapestCourier.cost) {
+				cheapestCourier = {
+					name: courier.name,
+					service: courier.service,
+					cost: courier.cost,
 				}
-			})
+			}
 		})
 	}
 
@@ -215,9 +227,10 @@ export default function Checkout() {
 					courier_name: selectedCourier.name,
 					courier_service: selectedCourier.service,
 					courier_description: selectedCourier.description,
-					province: selectedRegion?.province?.name,
-					city: selectedRegion?.city?.name,
-					subdistrict: selectedRegion?.subdistrict?.subdistrict_name,
+					province: provinces.find(prov => prov.id === parseInt(selectedRegion.province_id))?.name,
+					city: cities.find(city => city.id === parseInt(selectedRegion.city_id))?.name,
+					district: district.find(dis => dis.id === parseInt(selectedRegion.district_id))?.name,
+					subdistrict: subdistrict.find(sub => sub.id === parseInt(selectedRegion.subdistrict_id))?.name,
 					postal_code: formRef.current.postal_code.value,
 					address: formRef.current.address.value,
 					address_detail: formRef.current.address_detail.value,
@@ -574,12 +587,12 @@ export default function Checkout() {
 														name="province"
 														type="text"
 														className="text-gray-800 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-														ref={(el) => (formRef.current.province = el)}
+														ref={(el) => (formRef.current.province_id = el)}
 														onChange={handleProvinceChange}
 													>
 														<option value="" className="text-gray-400">---pilih provinsi---</option>
 														{provinces?.length > 0 && provinces.map((prov) => (
-															<option selected={selectedRegion?.province?.id == prov.id} key={prov.id + 'province'} value={prov.id}>{prov.name}</option>
+															<option selected={selectedRegion?.province_id == prov.id} key={prov.id + 'province'} value={prov.id}>{prov.name}</option>
 														))}
 													</select>
 													{errors?.province?.map((err) => (
@@ -600,13 +613,13 @@ export default function Checkout() {
 														name="city"
 														type="text"
 														className="text-gray-800 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-														ref={(el) => (formRef.current.city = el)}
+														ref={(el) => (formRef.current.city_id = el)}
 														onChange={handleCityChange}
-														disabled={!selectedRegion.province}
+														disabled={!selectedRegion.province_id}
 													>
 														<option value="" className="text-gray-400">---pilih kota/kabupaten---</option>
 														{cities?.length > 0 && cities.map((city) => (
-															<option selected={selectedRegion?.city?.id == city.id} key={city.id + 'city'} value={city.id}>{city.name}</option>
+															<option selected={selectedRegion?.city_id == city.id} key={city.id + 'city'} value={city.id}>{city.name}</option>
 														))}
 													</select>
 													{errors?.city?.map((err) => (
@@ -618,8 +631,35 @@ export default function Checkout() {
 											</div>
 
 											<div>
-												<label htmlFor="subdistrict" className="block text-sm font-medium text-gray-700">
+												<label htmlFor="district" className="block text-sm font-medium text-gray-700">
 													Kecamatan
+												</label>
+												<div className="mt-1">
+													<select
+														id="district"
+														name="district"
+														type="text"
+														className="text-gray-800 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+														ref={(el) => formRef.current.district_id = el}
+														onChange={handleDistrictChange}
+														disabled={!selectedRegion.city_id}
+													>
+														<option value="" className="text-gray-400">---pilih kecamatan---</option>
+														{district?.length > 0 && district.map((dis) => (
+															<option selected={selectedRegion?.district_id == dis.id} key={dis.id + 'district'} value={dis.id}>{dis.name}</option>
+														))}
+													</select>
+													{errors?.district?.map((err) => (
+														<p key={err} className="text-red-600 pl-3 text-sm mt-1">
+															{err}
+														</p>
+													))}
+												</div>
+											</div>
+
+											<div>
+												<label htmlFor="subdistrict" className="block text-sm font-medium text-gray-700">
+													Desa
 												</label>
 												<div className="mt-1">
 													<select
@@ -629,11 +669,11 @@ export default function Checkout() {
 														className="text-gray-800 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
 														ref={(el) => formRef.current.subdistrict_id = el}
 														onChange={handleSubdistrictChange}
-														disabled={!selectedRegion.city}
+														disabled={!selectedRegion.subdistrict_id}
 													>
-														<option value="" className="text-gray-400">---pilih kecamatan---</option>
+														<option value="" className="text-gray-400">---pilih desa---</option>
 														{subdistrict?.length > 0 && subdistrict.map((sub) => (
-															<option selected={selectedRegion?.subdistrict?.subdistrict_id == sub.subdistrict_id} key={sub.subdistrict_id + 'sub'} value={sub.subdistrict_id}>{sub.subdistrict_name}</option>
+															<option selected={selectedRegion?.subdistrict_id == sub.id} key={sub.id + 'subdistrict'} value={sub.id}>{sub.name}</option>
 														))}
 													</select>
 													{errors?.subdistrict?.map((err) => (
@@ -654,8 +694,8 @@ export default function Checkout() {
 														name="postal_code"
 														type="text"
 														className="text-gray-800 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+														defaultValue={user?.postal_code}
 														ref={(el) => (formRef.current.postal_code = el)}
-														defaultValue={selectedRegion?.subdistrict?.postal_code}
 													/>
 													{errors?.postal_code?.map((err) => (
 														<p key={err} className="text-red-600 pl-3 text-sm mt-1">
@@ -691,7 +731,7 @@ export default function Checkout() {
 											type="button"
 											className="text-indigo-600 hover:underline text-sm font-medium"
 											onClick={() => {
-												selectedRegion.subdistrict ? handleClickChooseCourier() : SweetAlertError('Silahkan pilih kecamatan pengiriman dahulu')
+												selectedRegion.subdistrict_id ? handleClickChooseCourier() : SweetAlertError('Silahkan pilih kecamatan pengiriman dahulu')
 											}}
 										>
 											{
@@ -737,31 +777,27 @@ export default function Checkout() {
 											{courierList?.map((courier, index) => (
 												<div key={index + 'courier'} className="border p-4 rounded-lg">
 													<p className="text-sm text-gray-800 font-bold mb-2">{courier.name}</p>
-
-													{/* Loop kedua untuk setiap service dari courier */}
-													{courier.costs.map((service, serviceIndex) => (
-														<div
-															key={serviceIndex + 'service'}
-															className={`text-gray-800 border p-3 rounded-lg cursor-pointer mb-2 ${selectedCourier?.name === courier.name && selectedCourier?.service === service.service ? 'border-red-500' : 'border-gray-200'}`}
-															onClick={() => {
-																setSelectedCourier({...courier, name: courier.name, service: service.service, cost: service.cost[0].value, etd: service.cost[0].etd, description: service.description})
-																setIsModalOpen(false)
-															}}
-														>
-															<div className="flex justify-between">
-																<div>
-																	<p className="text-sm font-semibold">{service.service}</p>
-																	<p className="text-xs text-gray-500">
-																		{service.description} - Estimasi tiba {service.cost[0].etd || '-'} (hari)
-																	</p>
-																</div>
-																<div className="text-sm font-bold">{formatRupiah(service.cost[0].value)}</div>
+													<div
+														key={index + 'courier service'}
+														className={`text-gray-800 border p-3 rounded-lg cursor-pointer mb-2 ${selectedCourier?.name === courier.name && selectedCourier?.service === courier.service ? 'border-red-500' : 'border-gray-200'}`}
+														onClick={() => {
+															setSelectedCourier({...courier, name: courier.name, service: courier.service, cost: courier.cost, etd: courier.etd, description: courier.description})
+															setIsModalOpen(false)
+														}}
+													>
+														<div className="flex justify-between">
+															<div>
+																<p className="text-sm font-semibold">{courier.service}</p>
+																<p className="text-xs text-gray-500">
+																	{courier.description} - Estimasi tiba {courier.etd || '-'}
+																</p>
 															</div>
-															{cheapestCourier?.name === courier.name && cheapestCourier?.service === service.service && (
-																<p className="mt-2 text-xs text-green-500">rekomendasi</p>
-															)}
+															<div className="text-sm font-bold">{formatRupiah(courier.cost)}</div>
 														</div>
-													))}
+														{cheapestCourier?.name === courier.name && cheapestCourier?.service === courier.service && (
+															<p className="mt-2 text-xs text-green-500">rekomendasi</p>
+														)}
+													</div>
 												</div>
 											))}
 										</div>

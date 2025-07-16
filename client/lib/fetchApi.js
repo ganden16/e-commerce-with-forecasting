@@ -548,7 +548,7 @@ export const getAllProvinces = async (cbSuccess, cbError) => {
 }
 export const getCityByProvinceId = async (provinceId, cbSuccess, cbError) => {
 	try {
-		const res = await axios.get(`${endpoint.region}/city/${provinceId}`)
+		const res = await axios.get(`${endpoint.region}/city?provinceId=${provinceId}`)
 		if(res.status == 200) {
 			cbSuccess(res)
 		}
@@ -557,9 +557,20 @@ export const getCityByProvinceId = async (provinceId, cbSuccess, cbError) => {
 		cbError(error)
 	}
 }
-export const getSubdistrict = async (cityId, subdistrictId, cbSuccess, cbError) => {
+export const getDistrictByCityId = async (cityId, cbSuccess, cbError) => {
 	try {
-		const res = await axios.get(`${endpoint.region}/subdistrict?cityId=${cityId}&subdistrictId=${subdistrictId}`)
+		const res = await axios.get(`${endpoint.region}/district?cityId=${cityId}`)
+		if(res.status == 200) {
+			cbSuccess(res)
+		}
+	} catch(error) {
+		console.log(error)
+		cbError(error)
+	}
+}
+export const getSubdistrictByDistrictId = async (districtId, cbSuccess, cbError) => {
+	try {
+		const res = await axios.get(`${endpoint.region}/subdistrict?districtId=${districtId}`)
 		if(res.status == 200) {
 			cbSuccess(res)
 		}

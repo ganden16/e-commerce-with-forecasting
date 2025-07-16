@@ -16,7 +16,7 @@ return new class extends Migration
 			$table->unsignedInteger('province_id');
 			$table->unsignedInteger('city_id');
 			$table->unsignedInteger('district_id');
-			$table->unsignedInteger('subdistrict_id');
+			$table->unsignedInteger('subdistrict_id')->nullable();
 			$table->string('postal_code')->nullable();
 			$table->timestamps();
 		});

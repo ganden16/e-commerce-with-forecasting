@@ -78,23 +78,23 @@ Route::prefix('auth')->group(function () {
 
 Route::prefix('region')->group(function () {
 
-	//info: jatim=11, sidoarjo=409, gedangan=5634, 5631-5648
 	Route::get('/province', function () {
-		$province = Province::all();
-		return response()->json($province);
+		$provinces = RajaOngkir::getAllProvinces();
+		return response()->json($provinces);
 	});
-	Route::get('/city/{provinceId}', function ($provinceId) {
-		$city = City::where('province_id', $provinceId)->get();
-		return response()->json($city);
+	Route::get('/city', function(Request $request)  {
+		$provinceId = $request->query('provinceId');
+		$cities = RajaOngkir::getCitiesByProvince($provinceId);
+		return response()->json($cities);
 	});
 	Route::get('/district', function (Request $request) {
 		$cityId = $request->query('cityId');
-		$district = RajaOngkir::getDistrictByCity($cityId);
-		return response()->json($district);
+		$districts = RajaOngkir::getDistrictByCity($cityId);
+		return response()->json($districts);
 	});
 	Route::get('/subdistrict', function (Request $request) {
 		$districtId = $request->query('districtId');
-		$subdistricts = RajaOngkir::getDistrictByCity($districtId);
+		$subdistricts = RajaOngkir::getSubdistrictByDistrict($districtId);
 		return response()->json($subdistricts);
 	});
 });

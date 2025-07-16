@@ -4,7 +4,7 @@ import FooterUser from '@/components/user/footer'
 import AuthMiddleware from '@/components/authMiddleware'
 import {useSelector} from 'react-redux'
 import {SweetAlertError, sweetAlertSubmitData, SweetAlertSuccess} from '@/components/sweetAlert'
-import {changePassword, getAllProvinces, getCityByProvinceId, getSubdistrict, updateProfile} from '@/lib/fetchApi'
+import {changePassword, getAllProvinces, getCityByProvinceId, getDistrictByCityId, getSubdistrict, getSubdistrictByDistrictId, updateProfile} from '@/lib/fetchApi'
 import UserMiddleware from '@/components/userMiddleware'
 
 export default function Profil() {
@@ -16,38 +16,46 @@ export default function Profil() {
 	const formData = new FormData()
 	const [provinces, setProvinces] = useState(null)
 	const [cities, setCities] = useState(null)
+	const [district, setDistrict] = useState(null)
 	const [subdistrict, setSubdistrict] = useState(null)
 	const initialSelectedRegion = {
-		province: null,
-		city: null,
-		subdistrict: null,
+		province_id: null,
+		city_id: null,
+		district_id: null,
+		subdistrict_id: null,
 	}
 	const [selectedRegion, setSelectedRegion] = useState(initialSelectedRegion)
 
 	const handleProvinceChange = (event) => {
-		const selectedProvince = provinces.find(prov => prov.id === parseInt(event.target.value))
 		setSelectedRegion((prevState) => ({
-			...prevState,
-			province: selectedProvince,
-			city: null,
-			subdistrict: null
+			province_id: event.target.value,
+			city_id: null,
+			district_id: null,
+			subdistrict_id: null
 		}))
 	}
 
 	const handleCityChange = (event) => {
-		const selectedCity = cities.find(city => city.id === parseInt(event.target.value))
 		setSelectedRegion((prevState) => ({
 			...prevState,
-			city: selectedCity,
-			subdistrict: null
+			city_id: event.target.value,
+			district_id: null,
+			subdistrict_id: null
+		}))
+	}
+
+	const handleDistrictChange = (event) => {
+		setSelectedRegion((prevState) => ({
+			...prevState,
+			district_id: event.target.value,
+			subdistrict_id: null,
 		}))
 	}
 
 	const handleSubdistrictChange = (event) => {
-		const selectedSubdistrict = subdistrict.find(sub => sub.id === parseInt(event.target.value))
 		setSelectedRegion((prevState) => ({
 			...prevState,
-			subdistrict: selectedSubdistrict,
+			subdistrict_id: event.target.value,
 		}))
 	}
 
@@ -70,8 +78,13 @@ export default function Profil() {
 		formData.append('telephone', formRef.current.telephone.value)
 		formData.append('gender', formRef.current.gender.value)
 		formData.append('address', formRef.current.address.value)
+		formData.append('province_id', formRef.current.province_id.value)
+		formData.append('city_id', formRef.current.city_id.value)
+		formData.append('district_id', formRef.current.district_id.value)
 		formData.append('subdistrict_id', formRef.current.subdistrict_id.value)
+		formData.append('postal_code', formRef.current.postal_code.value)
 		formData.append('_method', 'PUT')
+
 		sweetAlertSubmitData(() => {
 			updateProfile(formData, (res) => {
 				SweetAlertSuccess(res.data.message)
@@ -111,41 +124,57 @@ export default function Profil() {
 		getAllProvinces((res) => {
 			setProvinces(res.data)
 		}, (err) => {})
-		getSubdistrict('', user.subdistrict_id, (res) => {
-			setSelectedRegion({
-				province: {
-					id: parseInt(res.data.province_id)
-				},
-				city: {
-					id: parseInt(res.data.city_id)
-				},
-				subdistrict: {
-					id: parseInt(res.data.subdistrict_id)
-				}
-			})
-		}, (err) => {})
+		setSelectedRegion({
+			province_id: user.province_id ?? null,
+			city_id: user.city_id ?? null,
+			district_id: user.district_id ?? null,
+			subdistrict_id: user.subdistrict_id ?? null,
+		})
 	}, [])
 
 	useEffect(() => {
-		if(selectedRegion?.province?.id) {
-			getCityByProvinceId(selectedRegion.province.id, (res) => {
+		if(selectedRegion?.province_id) {
+			getCityByProvinceId(selectedRegion.province_id, (res) => {
 				setCities(res.data)
 			}, (err) => {
+
+			})
+		}
+	}, [selectedRegion.province_id])
+
+	useEffect(() => {
+		if(selectedRegion?.city_id) {
+			getDistrictByCityId(selectedRegion.city_id, (res) => {
+				setDistrict(res.data)
+			}, (err) => {
+
 			})
 		}
 
-	}, [selectedRegion.province])
+	}, [selectedRegion.city_id])
 
 	useEffect(() => {
-		if(selectedRegion?.city?.id) {
-			getSubdistrict(selectedRegion.city.id, '', (res) => {
+		if(selectedRegion?.district_id) {
+			getSubdistrictByDistrictId(selectedRegion.district_id, (res) => {
 				setSubdistrict(res.data)
 			}, (err) => {
 
 			})
 		}
 
-	}, [selectedRegion.city])
+	}, [selectedRegion.district_id])
+
+	useEffect(() => {
+		if (selectedRegion?.subdistrict_id && subdistrict) {
+        const selectedSubdistrict = subdistrict.find(sub => 
+            Number(sub.id) === Number(selectedRegion.subdistrict_id)
+        )
+        if (selectedSubdistrict) {
+            formRef.current.postal_code.value = selectedSubdistrict.zip_code
+        }
+    }
+
+	}, [selectedRegion.subdistrict_id])
 
 	return (
 		<AuthMiddleware>
@@ -381,14 +410,19 @@ export default function Profil() {
 														name="province"
 														required
 														className="block w-full rounded-md border-0 bg-gray-700 text-white py-1.5 shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6"
-														ref={(el) => formRef.current.province = el}
+														ref={(el) => formRef.current.province_id = el}
 														onChange={handleProvinceChange}
 													>
 														<option value="" className="text-gray-400">---Pilih Provinsi---</option>
 														{provinces?.map((prov) => (
-															<option selected={selectedRegion?.province?.id == prov.id} key={prov.id + 'province'} value={prov.id}>{prov.name}</option>
+															<option selected={selectedRegion?.province_id == prov.id} key={prov.id + 'province'} value={prov.id}>{prov.name}</option>
 														))}
 													</select>
+													{
+														errors?.province_id?.map(err => (
+															<p className='text-red-600 pl-3 text-sm'>{err}</p>
+														))
+													}
 												</div>
 											</div>
 
@@ -403,21 +437,53 @@ export default function Profil() {
 														name="city"
 														required
 														className="block w-full rounded-md border-0 bg-gray-700 text-white py-1.5 shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6"
-														ref={(el) => formRef.current.city = el}
+														ref={(el) => formRef.current.city_id = el}
 														onChange={handleCityChange}
 													>
 														<option value="" className="text-gray-400">---Pilih Kota/Kab---</option>
 														{cities?.length > 0 && cities.map((city) => (
-															<option selected={selectedRegion?.city?.id == city.id} key={city.id + 'city'} value={city.id}>{city.name}</option>
+															<option selected={selectedRegion?.city_id == city.id} key={city.id + 'city'} value={city.id}>{city.name}</option>
 														))}
 													</select>
+													{
+														errors?.city_id?.map(err => (
+															<p className='text-red-600 pl-3 text-sm'>{err}</p>
+														))
+													}
 												</div>
 											</div>
 
 											{/* Kecamatan */}
 											<div className="col-span-full">
-												<label htmlFor="subdistrict" className="block text-sm font-medium leading-6 text-white">
+												<label htmlFor="district" className="block text-sm font-medium leading-6 text-white">
 													Kecamatan
+												</label>
+												<div className="mt-2">
+													<select
+														id="district"
+														name="district"
+														required
+														className="block w-full rounded-md border-0 bg-gray-700 text-white py-1.5 shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6"
+														ref={(el) => formRef.current.district_id = el}
+														onChange={handleDistrictChange}
+													>
+														<option value="" className="text-gray-400">---Pilih Kecamatan---</option>
+														{district?.length > 0 && district.map((data) => (
+															<option selected={selectedRegion?.district_id == data.id} key={data.id + 'district'} value={data.id}>{data.name}</option>
+														))}
+													</select>
+													{
+														errors?.district_id?.map(err => (
+															<p className='text-red-600 pl-3 text-sm'>{err}</p>
+														))
+													}
+												</div>
+											</div>
+
+											{/* Desa */}
+											<div className="col-span-full">
+												<label htmlFor="subdistrict" className="block text-sm font-medium leading-6 text-white">
+													Desa/Kelurahan
 												</label>
 												<div className="mt-2">
 													<select
@@ -428,16 +494,29 @@ export default function Profil() {
 														ref={(el) => formRef.current.subdistrict_id = el}
 														onChange={handleSubdistrictChange}
 													>
-														<option value="" className="text-gray-400">---Pilih Kecamatan---</option>
+														<option value="" className="text-gray-400">---Pilih Desa/Kelurahan---</option>
 														{subdistrict?.length > 0 && subdistrict.map((sub) => (
-															<option selected={selectedRegion?.subdistrict?.id == sub.subdistrict_id} key={sub.subdistrict_id + 'sub'} value={sub.subdistrict_id}>{sub.subdistrict_name}</option>
+															<option selected={selectedRegion?.subdistrict_id == sub.id} key={sub.id + 'subdistrict'} value={sub.id}>{sub.name}</option>
 														))}
 													</select>
-													{
-														errors?.subdistrict_id?.map(err => (
-															<p className='text-red-600 pl-3 text-sm'>{err}</p>
-														))
-													}
+												</div>
+											</div>
+
+											{/* Kode Pos */}
+											<div className="sm:col-span-3">
+												<label htmlFor="postal_code" className="block text-sm font-medium leading-6 text-white">
+													Kode Pos
+												</label>
+												<div className="mt-2">
+													<input
+														id="postal_code"
+														name="postal_code"
+														type="text"
+														className="block w-full rounded-md border-0 bg-white/5 py-1.5 text-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6"
+														placeholder="kode pos"
+														defaultValue={user?.postal_code}
+														ref={(el) => formRef.current.postal_code = el}
+													/>
 												</div>
 											</div>
 										</div>

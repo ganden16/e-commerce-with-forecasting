@@ -9,33 +9,49 @@ class ShipmentController extends Controller
 {
 	public function cost(Request $request)
 	{
+		// Validasi input
 		$request->validate([
 			'destination' => 'required|numeric',
 			'weight' => 'required|numeric',
-			// 'courier' => 'required',
 		], [
-			'destination.required' => 'destinasi masih kosong',
-			'weight.required' => 'berat masih kosong',
-			'numeric' => ':attribute harus angka'
+			'destination.required' => 'Destinasi masih kosong.',
+			'weight.required' => 'Berat masih kosong.',
+			'numeric' => ':attribute harus angka.'
 		]);
 
-		$response = Http::withHeaders([
-				'key' => env('RAJA_ONGKIR_KEY')
-			])
-			->post(env('RAJAONGKIR_URL') . '/api/v1/calculate/district/domestic-cost', [
-				'origin' => 5997, //gedangan, sidoarjo, jawa timur
-				'destination' => $request->destination,
-				'weight' => $request->weight,
-				// 'courier' => $request->courier,
-				'courier' => 'jnt:jne:pos:sicepat:anteraja:ninja'
-		]);
+		try {
+			// Kirim request ke RajaOngkir
+			$response = Http::withHeaders([
+					'key' => env('RAJA_ONGKIR_KEY'),
+					'Content-Type' => 'application/x-www-form-urlencoded'
+			])->withoutVerifying()->post(env('RAJAONGKIR_URL'). '/api/v1/calculate/district/domestic-cost', [
+					'origin' => '5997',
+					'destination' => strval($request->destination),
+					'weight' => intval($request->weight),
+					'courier' => 'jnt:jne:pos:sicepat:anteraja:ninja:tiki:wahana',
+					'price' => 'lowest'
+			]);
 
-		$responseData = json_decode($response->body(), true);
+			// Cek apakah response sukses
+			if ($response->successful()) {
+					$data = $response->json('data');
+					return response()->json(collect($data));
+			} else {
+					return response()->json([
+						'response' => $response->json(),
+						'error' => 'Gagal mengambil data ongkos kirim',
+						'status' => $response->status(),
+						'message' => $response->json('description') ?? 'Unknown error'
+					], $response->status());
+			}
 
-		$costData = $responseData['rajaongkir']['results'][0]['costs'][0]['cost'][0]['value'];
-
-		// return response()->json($costData);
-		return response()->json($responseData['data']);
+		} catch (\Exception $e) {
+			// Tangkap error jaringan, timeout, dll
+			return response()->json([
+					'error' => 'Terjadi kesalahan internal server',
+					'message' => $e->getMessage()
+			], 500);
+		}
 	}
 
 	public function tracking(Request $request)

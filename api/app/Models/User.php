@@ -42,10 +42,10 @@ class User extends Authenticatable
 		];
 	}
 
-	public function region()
-	{
-		return $this->belongsTo(Region::class, 'region_id', 'id');
-	}
+	// public function region()
+	// {
+	// 	return $this->belongsTo(Region::class, 'region_id', 'id');
+	// }
 	public function orders()
 	{
 		return $this->hasMany(Order::class);

@@ -17,7 +17,8 @@ return new class extends Migration
 			$table->foreignId('order_id');
 			$table->string('province');
 			$table->string('city');
-			$table->string('subdistrict');
+			$table->string('district');
+			$table->string('subdistrict')->nullable();
 			$table->string('postal_code')->nullable();
 			$table->text('address');
 			$table->string('address_detail')->nullable();

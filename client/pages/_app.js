@@ -19,6 +19,7 @@ function AuthWrapper({children}) {
 			me((res) => {
 				if(res.data) {
 					dispatch(setUser(res.data))
+					console.log('user', res.data)
 					setLoading(false)
 				} else {
 					localStorage.removeItem('token')

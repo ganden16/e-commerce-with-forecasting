@@ -276,7 +276,11 @@ class DatabaseSeeder extends Seeder
 				'email' => 'admin' . $i . '@mail.com',
 				'username' => 'admin' . $i,
 				'is_admin' => true,
-				'region_id' => $regions->random()->id,
+				'province_id' => $regions->random()->province_id,
+				'city_id' => $regions->random()->city_id,
+				'district_id' => $regions->random()->district_id,
+				'subdistrict_id' => $regions->random()->subdistrict_id,
+				'postal_code' => $regions->random()->postal_code
 			]);
 		}
 
@@ -286,7 +290,11 @@ class DatabaseSeeder extends Seeder
 				'email' => 'user' . $i . '@mail.com',
 				'username' => 'user' . $i,
 				'is_admin' => false,
-				'region_id' => $regions->random()->id,
+				'province_id' => $regions->random()->province_id,
+				'city_id' => $regions->random()->city_id,
+				'district_id' => $regions->random()->district_id,
+				'subdistrict_id' => $regions->random()->subdistrict_id,
+				'postal_code' => $regions->random()->postal_code
 			]);
 			$usedProductIds = [];
 			for ($j = 0; $j < 5; $j++) {

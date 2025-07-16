@@ -6,6 +6,7 @@ use App\Helper\Whatsaap;
 use App\Helper\WhatsappMessage;
 use App\Jobs\SendWhatsaap;
 use App\Models\OtpForgotPassword;
+use App\Models\Region;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -89,12 +90,16 @@ class AuthController extends Controller
 			'whatsaap' => 'required|numeric|unique:users,whatsaap',
 			'telephone' => 'nullable|numeric',
 			'address' => 'required',
-			'subdistrict_id' => 'required',
+			'province_id' => 'required',
+			'city_id' => 'required',
+			'district_id' => 'required',
 			'gender' => 'required',
 
 		], [
 			'required' => 'tidak boleh kosong',
-			'subdistrict_id.required' => 'silahkan pilih provinsi, kota/kab, kecamatan',
+			'province_id.required' => 'silahkan pilih provinsi',
+			'city_id.required' => 'silahkan pilih kota/kabupaten',
+			'district_id.required' => 'silahkan pilih kecamatan',
 			'numeric' => 'harus berupa angka',
 			'min' => 'minimal :min karakter',
 			'unique' => ':attribute telah terdaftar, gunakan :attribute lain',
@@ -108,7 +113,11 @@ class AuthController extends Controller
 			'email' => $request->email,
 			'password' => Hash::make($request->password),
 			'address' => $request->address,
-			'subdistrict_id' => (int)$request->subdistrict_id,
+			'province_id' => $request->province_id,
+			'city_id' => $request->city_id,
+			'district_id' => $request->district_id,
+			'subdistrict_id' => $request->subdistrict_id ?? null,
+			'postal_code' => $request->postal_code ?? null,
 			'telephone' => $request->telephone,
 			'whatsaap' => $request->whatsaap,
 			'gender' => $gender,
@@ -215,12 +224,16 @@ class AuthController extends Controller
 			'whatsaap' => 'required|numeric',
 			'telephone' => 'nullable|numeric',
 			'address' => 'required',
-			'subdistrict_id' => 'required',
+			'province_id' => 'required',
+			'city_id' => 'required',
+			'district_id' => 'required',
 			'gender' => 'required',
 			'fileImage' => 'nullable|image|max:5000',
 		], [
 			'required' => 'tidak boleh kosong',
-			'subdistrict_id.required' => 'silahkan pilih provinsi, kota/kab, kecamatan',
+			'province_id.required' => 'silahkan pilih provinsi',
+			'city_id.required' => 'silahkan pilih kota/kabupaten',
+			'district_id.required' => 'silahkan pilih kecamatan',
 			'numeric' => 'harus berupa angka',
 			'min' => 'minimal :min karakter',
 			'unique' => ':attribute telah terdaftar, gunakan :attribute lain',
@@ -245,11 +258,15 @@ class AuthController extends Controller
 			'username' => $request->username,
 			'email' => $request->email,
 			'address' => $request->address,
-			'subdistrict_id' => $request->subdistrict_id,
 			'telephone' => $request->telephone,
 			'whatsaap' => $request->whatsaap,
 			'gender' => $gender,
-			'image' => $image
+			'image' => $image,
+			'province_id' => $request->province_id,
+			'city_id' => $request->city_id,
+			'district_id' => $request->district_id,
+			'subdistrict_id' => $request->subdistrict_id ?? null,
+			'postal_code' => $request->postal_code ?? null
 		]);
 
 		return response()->json([
