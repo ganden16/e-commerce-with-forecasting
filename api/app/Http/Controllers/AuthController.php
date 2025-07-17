@@ -32,7 +32,9 @@ class AuthController extends Controller
 			'whatsaap' => 'temp-whatsaap-' . $googleUser->getId(),
 			'password' => bcrypt(Str::random(8)),
 			'address' => 'temp-address-' . $googleUser->getId(),
-			'subdistrict_id' => 99,
+			'province_id' => 99,
+			'city_id' => 99,
+			'district_id' => 99,
 			'gender' => 0,
 			'is_admin' => false,
 		]);
