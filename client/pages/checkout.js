@@ -169,8 +169,11 @@ export default function Checkout() {
 			weight: totalWeight
 		}, (res) => {
 			const filteredCourierList = res.data.filter((courier) => {
-				return courier.service != 'GOKIL' && totalWeight < 10000
+				if(courier.service == 'GOKIL' && totalWeight < 10000) return false
+				return true
 			})
+			console.log('filteredCourierList',filteredCourierList)
+			console.log('res.data',res.data)
 			setCourierList(filteredCourierList)
 			setLoadingChooseCourier(false)
 			setIsModalOpen(true)
@@ -718,7 +721,7 @@ export default function Checkout() {
 									<div className="flex items-center justify-between">
 										<div>
 											<p className="text-sm text-gray-700 font-bold">
-												Ongkos Kirim ({selectedCourier ? formatRupiah(selectedCourier?.costs[0].cost[0].value) : '-'})
+												Ongkos Kirim ({selectedCourier ? formatRupiah(selectedCourier?.costs) : '-'})
 											</p>
 											<p className="text-xs text-gray-500 mt-1">
 												Kurir: <span className="font-medium">{selectedCourier?.name || '-'}</span>
@@ -755,7 +758,7 @@ export default function Checkout() {
 											<path strokeLinecap="round" strokeLinejoin="round" d="M12 8.25v5.5m0 0v5.5m0-5.5H8m4 0h4m1.5-9.5a9 9 0 100 18 9 9 0 000-18zm0 0a9 9 0 110 18 9 9 0 010-18z" />
 										</svg>
 										<span>
-											Perkiraan tiba {selectedCourier?.costs[0].cost[0].etd || '-'} (hari)
+											Perkiraan tiba {selectedCourier?.etd || '-'}
 										</span>
 									</div>
 								</div>
