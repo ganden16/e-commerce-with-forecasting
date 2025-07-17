@@ -10,16 +10,16 @@ export default function IndexUser() {
 	const [isOpen, setIsOpen] = useState(false)
 	const [users, setUsers] = useState([])
 	const [detailUser, setDetailUser] = useState({})
-	const [regionDetailUser, setRegionDetailUser] = useState(null)
+	// const [regionDetailUser, setRegionDetailUser] = useState(null)
 
 	useEffect(() => {
 		getAllUsers((res) => setUsers(res.data))
 	}, [])
-	useEffect(() => {
-		getSubdistrict('', detailUser.subdistrict_id, (res) => {
-			setRegionDetailUser(res.data)
-		}, (err) => {})
-	}, [detailUser])
+	// useEffect(() => {
+	// 	getSubdistrict('', detailUser.subdistrict_id, (res) => {
+			// setRegionDetailUser(res.data)
+	// 	}, (err) => {})
+	// }, [detailUser])
 
 	return (
 		<Sidebar headingPage="List Pelanggan">
@@ -34,7 +34,7 @@ export default function IndexUser() {
 							className="relative flex justify-between gap-x-6 px-4 py-5 hover:bg-gray-50 sm:px-6 cursor-pointer"
 							onClick={() => {
 								setDetailUser(user)
-								setRegionDetailUser(null)
+								// setRegionDetailUser(null)
 								setIsOpen(true)
 							}}
 						>
@@ -88,7 +88,7 @@ export default function IndexUser() {
 						<p className="mt-2 text-gray-600">Jenis Kelamin: {detailUser.gender == 1 ? 'Pria' : 'Wanita'}</p>
 						<p className="mt-2 text-gray-600">Telephone: {detailUser.telephone ?? '-'}</p>
 						<p className="mt-2 text-gray-600">Whatsaap: {detailUser.whatsaap ?? '-'}</p>
-						<p className="mt-2 text-gray-600">Alamat: {`${detailUser.address}.  ${regionDetailUser?.subdistrict_name || ''}, ${regionDetailUser?.city || ''}-${regionDetailUser?.province || ''}`}</p>
+						{/* <p className="mt-2 text-gray-600">Alamat: {`${detailUser.address}.  ${regionDetailUser?.subdistrict_name || ''}, ${regionDetailUser?.city || ''}-${regionDetailUser?.province || ''}`}</p> */}
 
 					</div>
 					{/* Tombol Tutup */}

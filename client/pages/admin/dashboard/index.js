@@ -38,27 +38,6 @@ const statuses = {
 	shipped: 'text-indigo-500 bg-gray-50 ring-gray-500/10',
 }
 
-const clients = [
-	{
-		id: 1,
-		name: 'Tuple',
-		imageUrl: 'https://tailwindui.com/img/logos/48x48/tuple.svg',
-		lastInvoice: {date: 'December 13, 2022', dateTime: '2022-12-13', amount: '$2,000.00', status: 'Overdue'},
-	},
-	{
-		id: 2,
-		name: 'SavvyCal',
-		imageUrl: 'https://tailwindui.com/img/logos/48x48/savvycal.svg',
-		lastInvoice: {date: 'January 22, 2023', dateTime: '2023-01-22', amount: '$14,000.00', status: 'Paid'},
-	},
-	{
-		id: 3,
-		name: 'Reform',
-		imageUrl: 'https://tailwindui.com/img/logos/48x48/reform.svg',
-		lastInvoice: {date: 'January 23, 2023', dateTime: '2023-01-23', amount: '$7,600.00', status: 'Paid'},
-	},
-]
-
 function classNames(...classes) {
 	return classes.filter(Boolean).join(' ')
 }
@@ -66,7 +45,7 @@ function classNames(...classes) {
 export default function Dashboard() {
 	const [isOpenDialogDetailUser, setIsOpenDialogDetailUser] = useState(false)
 	const [detailUser, setDetailUser] = useState({})
-	const [regionDetailUser, setRegionDetailUser] = useState(null)
+	// const [regionDetailUser, setRegionDetailUser] = useState(null)
 	const router = useRouter()
 	const [loadingPage, setLoadingPage] = useState(true)
 	const [data, setData] = useState(null)
@@ -81,11 +60,11 @@ export default function Dashboard() {
 		})
 	}, [])
 
-	useEffect(() => {
-		getSubdistrict('', detailUser.subdistrict_id, (res) => {
-			setRegionDetailUser(res.data)
-		}, (err) => {})
-	}, [detailUser])
+	// useEffect(() => {
+	// 	getSubdistrict('', detailUser.subdistrict_id, (res) => {
+	// 		setRegionDetailUser(res.data)
+	// 	}, (err) => {})
+	// }, [detailUser])
 
 	if(loadingPage) return '...Loading'
 
@@ -250,7 +229,7 @@ export default function Dashboard() {
 																	className="cursor-pointer block px-3 py-1 text-sm leading-6 text-gray-900 data-[focus]:bg-gray-50"
 																	onClick={() => {
 																		setDetailUser(client)
-																		setRegionDetailUser(null)
+																		// setRegionDetailUser(null)
 																		setIsOpenDialogDetailUser(true)
 																	}}
 																>
@@ -301,7 +280,7 @@ export default function Dashboard() {
 										<p className="mt-2 text-gray-600">Jenis Kelamin: {detailUser.gender == 1 ? 'Pria' : 'Wanita'}</p>
 										<p className="mt-2 text-gray-600">Telephone: {detailUser.telephone ?? '-'}</p>
 										<p className="mt-2 text-gray-600">Whatsaap: {detailUser.whatsaap ?? '-'}</p>
-										<p className="mt-2 text-gray-600">Alamat: {`${detailUser.address}.  ${regionDetailUser?.subdistrict_name || ''}, ${regionDetailUser?.city || ''}-${regionDetailUser?.province || ''}`}</p>
+										{/* <p className="mt-2 text-gray-600">Alamat: {`${detailUser.address}.  ${regionDetailUser?.subdistrict_name || ''}, ${regionDetailUser?.city || ''}-${regionDetailUser?.province || ''}`}</p> */}
 
 									</div>
 									{/* Tombol Tutup */}

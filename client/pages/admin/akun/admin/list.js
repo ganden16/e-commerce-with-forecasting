@@ -9,18 +9,18 @@ import {getAllAdmins, getSubdistrict} from '@/lib/fetchApi'
 export default function IndexAdmin() {
 	const [isOpen, setIsOpen] = useState(false)
 	const [detailAdmin, setDetailAdmin] = useState({})
-	const [regionDetailAdmin, setRegionDetailAdmin] = useState(null)
+	// const [regionDetailAdmin, setRegionDetailAdmin] = useState(null)
 	const [admins, setAdmins] = useState([])
 	const router = useRouter()
 
 	useEffect(() => {
 		getAllAdmins((res) => setAdmins(res.data))
 	}, [])
-	useEffect(() => {
-		getSubdistrict('', detailAdmin.subdistrict_id, (res) => {
-			setRegionDetailAdmin(res.data)
-		}, (err) => {})
-	}, [detailAdmin])
+	// useEffect(() => {
+	// 	getSubdistrict('', detailAdmin.subdistrict_id, (res) => {
+	// 		setRegionDetailAdmin(res.data)
+	// 	}, (err) => {})
+	// }, [detailAdmin])
 
 	return (
 		<Sidebar headingPage="List Admin">
@@ -41,7 +41,7 @@ export default function IndexAdmin() {
 							key={admin.email}
 							className="relative flex justify-between gap-x-6 px-4 py-5 hover:bg-gray-50 sm:px-6 cursor-pointer"
 							onClick={() => {
-								setRegionDetailAdmin(null)
+								// setRegionDetailAdmin(null)
 								setDetailAdmin(admin)
 								setIsOpen(true)
 							}}
@@ -96,7 +96,7 @@ export default function IndexAdmin() {
 						<p className="mt-2 text-gray-600">Jenis Kelamin: {detailAdmin.gender == 1 ? 'Pria' : 'Wanita'}</p>
 						<p className="mt-2 text-gray-600">Telephone: {detailAdmin.telephone ?? '-'}</p>
 						<p className="mt-2 text-gray-600">Whatsaap: {detailAdmin.whatsaap ?? '-'}</p>
-						<p className="mt-2 text-gray-600">Alamat: {`${detailAdmin.address}.  ${regionDetailAdmin?.subdistrict_name || ''}, ${regionDetailAdmin?.city || ''}-${regionDetailAdmin?.province || ''}`}</p>
+						{/* <p className="mt-2 text-gray-600">Alamat: {`${detailAdmin.address}.  ${regionDetailAdmin?.subdistrict_name || ''}, ${regionDetailAdmin?.city || ''}-${regionDetailAdmin?.province || ''}`}</p> */}
 
 					</div>
 					{/* Tombol Tutup */}
